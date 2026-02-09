@@ -12,7 +12,7 @@ from matplotlib.gridspec import GridSpec
 # --- Style settings (CMS-like) ---
 plt.rcParams.update({
     "font.family": "sans-serif",
-    "font.sans-serif": ["Arial"], #, "Helvetica"],
+#    "font.sans-serif": ["Helvetica"], #, "Helvetica"],
     "mathtext.default": "regular",
     "axes.linewidth": 1.2,
     "xtick.direction": "in",
@@ -42,9 +42,16 @@ def get_data(infile):
 
 	data_out["nevents_sig_ljdc"] = np.array( data_in["nevents_sig_ljdc"] )[mask] #* 0.01
 	data_out["nevents_sig_sjdc"] = np.array( data_in["nevents_sig_sjdc"] )[mask] #* 0.01
-	data_out["nevents_bkg_ljdc"] = np.full(len(data_out["ctaus"]), data_in["nevents_bkg_ljdc"])
-	data_out["nevents_bkg_sjdc"] = np.full(len(data_out["ctaus"]), data_in["nevents_bkg_sjdc"])
 
+	bkg_ljdc_23  = data_in["nevents_bkg_ljdc_23"]
+	bkg_sjdc_23  = data_in["nevents_bkg_sjdc_23"]
+	bkg_ljdc_22  = data_in["nevents_bkg_ljdc_22"]
+	bkg_sjdc_22  = data_in["nevents_bkg_sjdc_22"]
+	bkg_ljdc_total = (bkg_ljdc_22 + bkg_ljdc_23)
+	bkg_sjdc_total = (bkg_sjdc_22 + bkg_sjdc_23)
+
+	data_out["nevents_bkg_ljdc"] = np.full(len(data_out["ctaus"]), bkg_ljdc_total)
+	data_out["nevents_bkg_sjdc"] = np.full(len(data_out["ctaus"]), bkg_sjdc_total)
 
 	return data_out	
 

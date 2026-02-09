@@ -9,7 +9,7 @@ import json
 ROOT.gROOT.SetBatch(True)
 
 cwd = os.getcwd()
-default_template_datacard = os.path.join( cwd, "templates/v1/datacard_TEMPLATE.txt" )
+default_template_datacard = os.path.join( cwd, "templates/v0/datacard_TEMPLATE.txt" )
 
 # Lifetimes (ctau) in in mm -- points to dynamically reweight to
 lifetimes    = ["1000"] #["10", "30", "50", "100", "200", "300", "500", "800", "1000", "2000", "3000", "5000", "10000"]
@@ -75,6 +75,11 @@ def calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_scor
 
     return nevents_bkg_ljdc_srpred, nevents_bkg_sjdc_srpred
 
+def make_chain(tree_name, file_list):
+    chain = ROOT.TChain(tree_name)
+    for f in file_list:
+        chain.Add(f)
+    return chain
 # ------------------------------------------------------------------------------
 def main():
 
@@ -109,28 +114,52 @@ def main():
     print("Reading in data tree... (this may take a few minutes)")
 
     # if using a partial dataset, how much to scale this up by
-    lumi_sf = 6.8 # 2023D
+    lumi_sf_23 = 1.0 # 2023 all eras
+    lumi_sf_22 = 6.8 # 2023D
 
     # currently only using a partial dataset (2023D corresponds to lumi scale factor above)
-    infile_data = ROOT.TFile.Open("/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023D_allscores.root")
-    tree_data   = infile_data.Get("NoSel")
+    infile_data_23 = [
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv1_allscores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv2_allscores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv3_allscores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv4_allscores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023D_allscores.root",
+    ]
+
+    infile_data_22 = ROOT.TFile.Open("/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023D_allscores.root")
+
+    tree_data_23 = make_chain("NoSel", infile_data_23) 
+    tree_data_22   = infile_data_22.Get("NoSel")
 
     # Copy tree but only copy these branches
-    tree_data.SetBranchStatus("*", 0) 
-    tree_data.SetBranchStatus("Pass_PreSel", 1) 
-    tree_data.SetBranchStatus("jet*_DepthTagCand", 1) 
-    tree_data.SetBranchStatus("jet*_InclTagCand", 1) 
-    tree_data.SetBranchStatus("jet*_scores*", 1) 
-    tree_data.SetBranchStatus("jet*_DeepCSV*", 1)
+    tree_data_23.SetBranchStatus("*", 0) 
+    tree_data_23.SetBranchStatus("Pass_PreSel", 1) 
+    tree_data_23.SetBranchStatus("jet*_DepthTagCand", 1) 
+    tree_data_23.SetBranchStatus("jet*_InclTagCand", 1) 
+    tree_data_23.SetBranchStatus("jet*_scores*", 1) 
+    tree_data_23.SetBranchStatus("jet*_DeepCSV*", 1)
+
+    tree_data_22.SetBranchStatus("*", 0) 
+    tree_data_22.SetBranchStatus("Pass_PreSel", 1) 
+    tree_data_22.SetBranchStatus("jet*_DepthTagCand", 1) 
+    tree_data_22.SetBranchStatus("jet*_InclTagCand", 1) 
+    tree_data_22.SetBranchStatus("jet*_scores*", 1) 
+    tree_data_22.SetBranchStatus("jet*_DeepCSV*", 1)
 
     outfile_temp = ROOT.TFile("skim_temp_{0}.root".format(unique_filetag),"RECREATE")
     outfile_temp.cd()
-    tree_data_skim = tree_data.CopyTree("Pass_PreSel == 1")
+    tree_data_skim_23 = tree_data_23.CopyTree("Pass_PreSel == 1")
+    tree_data_skim_22 = tree_data_22.CopyTree("Pass_PreSel == 1")
 
     # Btag score corresponds to 2023 post BPIX (TODO: Fix)
-    nevents_bkg_ljdc_srpred, nevents_bkg_sjdc_srpred               = calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_score_cut) #, additional_cut_jet0="", additional_cut_jet1="")
-    nevents_bkg_ljdc_srpred_btag, nevents_bkg_sjdc_srpred_btag     = calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b > 0.2435", "jet1_DeepCSV_prob_b > 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
-    nevents_bkg_ljdc_srpred_nobtag, nevents_bkg_sjdc_srpred_nobtag = calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b < 0.2435", "jet1_DeepCSV_prob_b < 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
+    nevents_bkg_ljdc_srpred_23, nevents_bkg_sjdc_srpred_23               = calculate_bkg_prediction(tree_data_skim_23, lumi_sf_23, incl_score_cut, depth_score_cut) #, additional_cut_jet0="", additional_cut_jet1="")
+    nevents_bkg_ljdc_srpred_btag_23, nevents_bkg_sjdc_srpred_btag_23     = calculate_bkg_prediction(tree_data_skim_23, lumi_sf_23, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b > 0.2435", "jet1_DeepCSV_prob_b > 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
+    nevents_bkg_ljdc_srpred_nobtag_23, nevents_bkg_sjdc_srpred_nobtag_23 = calculate_bkg_prediction(tree_data_skim_23, lumi_sf_23, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b < 0.2435", "jet1_DeepCSV_prob_b < 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
+
+    nevents_bkg_ljdc_srpred_22, nevents_bkg_sjdc_srpred_22               = calculate_bkg_prediction(tree_data_skim_22, lumi_sf_22, incl_score_cut, depth_score_cut) #, additional_cut_jet0="", additional_cut_jet1="")
+    nevents_bkg_ljdc_srpred_btag_22, nevents_bkg_sjdc_srpred_btag_22     = calculate_bkg_prediction(tree_data_skim_22, lumi_sf_22, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b > 0.2435", "jet1_DeepCSV_prob_b > 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
+    nevents_bkg_ljdc_srpred_nobtag_22, nevents_bkg_sjdc_srpred_nobtag_22 = calculate_bkg_prediction(tree_data_skim_22, lumi_sf_22, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b < 0.2435", "jet1_DeepCSV_prob_b < 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
+
 
     # ----- Read in Signal ----- #
 
@@ -182,12 +211,19 @@ def main():
         replacements = {
             "SIGLJDC": f"{nevents_sig_ljdc_temp:04.2f}", 
             "SIGSJDC": f"{nevents_sig_sjdc_temp:04.2f}",
-            "BKGLJDC": f"{nevents_bkg_ljdc_srpred:04.2f}", 
-            "BKGSJDC": f"{nevents_bkg_sjdc_srpred:04.2f}",
-            "BKGLJ_B": f"{nevents_bkg_sjdc_srpred_btag:04.2f}",
-            "BKGLJ_XB": f"{nevents_bkg_sjdc_srpred_nobtag:04.2f}",
-            "BKGSJ_B": f"{nevents_bkg_sjdc_srpred_btag:04.2f}",
-            "BKGSJ_XB": f"{nevents_bkg_sjdc_srpred_nobtag:04.2f}"
+            "BKGLJDC_23_B": f"{nevents_bkg_ljdc_srpred_btag_23:04.2f}",
+            "BKGLJDC_23_XB": f"{nevents_bkg_ljdc_srpred_nobtag_23:04.2f}",
+            "BKGSJDC_23_B": f"{nevents_bkg_sjdc_srpred_btag_23:04.2f}",
+            "BKGSJDC_23_XB": f"{nevents_bkg_sjdc_srpred_nobtag_23:04.2f}",
+            "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:04.2f}", 
+            "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:04.2f}",
+            "BKGLJDC_22_B": f"{nevents_bkg_ljdc_srpred_btag_22:04.2f}",
+            "BKGLJDC_22_XB": f"{nevents_bkg_ljdc_srpred_nobtag_22:04.2f}",
+            "BKGSJDC_22_B": f"{nevents_bkg_sjdc_srpred_btag_22:04.2f}",
+            "BKGSJDC_22_XB": f"{nevents_bkg_sjdc_srpred_nobtag_22:04.2f}"
+            "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:04.2f}", 
+            "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:04.2f}",
+
         }
 
         pattern = re.compile("|".join(re.escape(k) for k in replacements))
@@ -229,8 +265,11 @@ def main():
     data["limits_exp"] = limits_expected
     data["nevents_sig_ljdc"] = nevents_sig_ljdc
     data["nevents_sig_sjdc"] = nevents_sig_sjdc
-    data["nevents_bkg_ljdc"] = nevents_bkg_ljdc_srpred
-    data["nevents_bkg_sjdc"] = nevents_bkg_sjdc_srpred
+    data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
+    data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
+    data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
+    data["nevents_bkg_sjdc_22"] = nevents_bkg_sjdc_srpred_22
+
 
     if not os.path.exists(output_dir): 
         os.makedirs(output_dir)

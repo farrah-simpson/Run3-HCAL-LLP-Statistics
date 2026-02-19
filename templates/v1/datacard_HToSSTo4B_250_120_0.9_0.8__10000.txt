@@ -8,7 +8,7 @@ observation             11          6         11          6
 bin                     LJDC_23        LJDC_23        LJDC_23        SJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        LJDC_22        SJDC_22        SJDC_22        SJDC_22
 process                 SIGNAL         btag           nobtag         SIGNAL         btag           nobtag         SIGNAL         btag           nobtag         SIGNAL         btag           nobtag
 process                 0              1              2              0              1              2              0              1              2              0              1              2
-rate                    8.37     0.55   7.36  2.49_23     0.08   2.00  8.37     1.65   14.09  2.49_22     0.21   3.18
+rate                    17.05     0.55   7.36  3.91_23     0.08   2.00  17.05     1.65   14.09  3.91_22     0.21   3.18
 ------------
 #Lumi signal only
 lumi_23  lnN              1.0017         -              -              1.0017         -              -              1.0138         -              -              1.0138         -              -

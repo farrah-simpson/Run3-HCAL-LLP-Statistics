@@ -10,15 +10,5 @@ process                 SIGNAL         btag           nobtag         SIGNAL     
 process                 0              1              2              0              1              2              0              1              2              0              1              2
 rate                    SIGLJDC     BKGLJDC_23_B   BKGLJDC_23_XB  SIGSJDC_23     BKGSJDC_23_B   BKGSJDC_23_XB  SIGLJDC     BKGLJDC_22_B   BKGLJDC_22_XB  SIGSJDC_22     BKGSJDC_22_B   BKGSJDC_22_XB
 ------------
-#Lumi signal only
-lumi_23  lnN              1.0017         -              -              1.0017         -              -              1.0138         -              -              1.0138         -              -
-lumi_22_23  lnN              1.0127         -              -              1.0127         -              -              -              -              -              -              -              -
-
-# Trigger efficiency signal only flat rate
-trigEff lnN              1.10           -              -              1.10           -              -              1.10           -              -              1.10           -              -
-
-# Background pileup-dependence background only AN table 8
-bkg_pileup lnN           -              1.09           1.12           -              1.45           1.15           -              1.09           1.12           -              1.45           1.15
-
 * autoMCStats 0
 

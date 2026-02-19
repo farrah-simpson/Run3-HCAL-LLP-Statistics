@@ -9,10 +9,10 @@ import json
 ROOT.gROOT.SetBatch(True)
 
 cwd = os.getcwd()
-default_template_datacard = os.path.join( cwd, "templates/v0/datacard_TEMPLATE.txt" )
+default_template_datacard = os.path.join( cwd, "templates/v1/datacard_TEMPLATE.txt" )
 
 # Lifetimes (ctau) in in mm -- points to dynamically reweight to
-lifetimes    = ["1000"] #["10", "30", "50", "100", "200", "300", "500", "800", "1000", "2000", "3000", "5000", "10000"]
+lifetimes    = ["10", "30", "50", "100", "200", "300", "500", "800", "1000", "2000", "3000", "5000", "10000"]
 
 # Temporary scale factor, otherwise get weird results
 SF_temp = 0.01
@@ -220,7 +220,7 @@ def main():
             "BKGLJDC_22_B": f"{nevents_bkg_ljdc_srpred_btag_22:04.2f}",
             "BKGLJDC_22_XB": f"{nevents_bkg_ljdc_srpred_nobtag_22:04.2f}",
             "BKGSJDC_22_B": f"{nevents_bkg_sjdc_srpred_btag_22:04.2f}",
-            "BKGSJDC_22_XB": f"{nevents_bkg_sjdc_srpred_nobtag_22:04.2f}"
+            "BKGSJDC_22_XB": f"{nevents_bkg_sjdc_srpred_nobtag_22:04.2f}",
             "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:04.2f}", 
             "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:04.2f}",
 

@@ -1,14 +1,24 @@
-imax 2  number of channels
+imax 4  number of channels
 jmax 2  number of backgrounds
 kmax *  number of nuisance parameters (sources of systematical uncertainties)
 ------------
-bin 			LJDC    SJDC 
-observation		3       1
+bin                     LJDC_23    SJDC_23    LJDC_22    SJDC_22
+observation             11          6         11          6
 ------------
-bin				LJDC			LJDC			LJDC            SJDC			SJDC            SJDC
-process			SIGNAL      	btag			nobtag          SIGNAL      	nobtag          btag
-process			0 				1	      		2 				0	            1               2
-rate			11.71		    0.21			3.18        3.58			0.21         3.18
+bin                     LJDC_23        LJDC_23        LJDC_23        SJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        LJDC_22        SJDC_22        SJDC_22        SJDC_22
+process                 SIGNAL         btag           nobtag         SIGNAL         btag           nobtag         SIGNAL         btag           nobtag         SIGNAL         btag           nobtag
+process                 0              1              2              0              1              2              0              1              2              0              1              2
+rate                    11.71     0.55   7.36  3.58_23     0.08   2.00  11.71     1.65   14.09  3.58_22     0.21   3.18
 ------------
-lumi 	lnN		1.11			- 		    	-               1.11			-               - 	
-pileup 	lnN		-				1.15	     	1.15            1.15		    1.15            1.15
+#Lumi signal only
+lumi_23  lnN              1.0017         -              -              1.0017         -              -              1.0138         -              -              1.0138         -              -
+lumi_22_23  lnN              1.0127         -              -              1.0127         -              -              -              -              -              -              -              -
+
+# Trigger efficiency signal only flat rate
+trigEff lnN              1.10           -              -              1.10           -              -              1.10           -              -              1.10           -              -
+
+# Background pileup-dependence background only AN table 8
+bkg_pileup lnN           -              1.09           1.12           -              1.45           1.15           -              1.09           1.12           -              1.45           1.15
+
+* autoMCStats 0
+

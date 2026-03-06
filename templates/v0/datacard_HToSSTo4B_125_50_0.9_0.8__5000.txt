@@ -1,0 +1,14 @@
+imax 4  number of channels
+jmax 2  number of backgrounds
+kmax *  number of nuisance parameters (sources of systematical uncertainties)
+------------
+bin                     LJDC_23    SJDC_23    LJDC_22    SJDC_22
+observation             11          6         11          6
+------------
+bin                     LJDC_23        LJDC_23        LJDC_23        SJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        LJDC_22        SJDC_22        SJDC_22        SJDC_22
+process                 SIGNAL         btag           nobtag         SIGNAL         btag           nobtag         SIGNAL         btag           nobtag         SIGNAL         btag           nobtag
+process                 0              1              2              0              1              2              0              1              2              0              1              2
+rate                    4.68     0.55   7.36  1.34_23     0.08   2.00  4.68     1.65   14.09  1.34_22     0.21   3.18
+------------
+* autoMCStats 0
+

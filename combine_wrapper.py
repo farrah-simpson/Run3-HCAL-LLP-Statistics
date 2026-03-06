@@ -115,7 +115,7 @@ def main():
 
     # if using a partial dataset, how much to scale this up by
     lumi_sf_23 = 1.0 # 2023 all eras
-    lumi_sf_22 = 6.8 # 2023D
+    lumi_sf_22 = 6.8 # 2023D dummy
 
     # currently only using a partial dataset (2023D corresponds to lumi scale factor above)
     infile_data_23 = [
@@ -269,7 +269,6 @@ def main():
     data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
     data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
     data["nevents_bkg_sjdc_22"] = nevents_bkg_sjdc_srpred_22
-
 
     if not os.path.exists(output_dir): 
         os.makedirs(output_dir)

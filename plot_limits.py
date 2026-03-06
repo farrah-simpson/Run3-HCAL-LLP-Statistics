@@ -111,6 +111,65 @@ def plot_single_limit(infile):
 	plt.savefig(outfile)
 
 # -------------------------------------------------------------------------------------------------
+def plot_ratio(infile1, infile2):
+	# Load
+	data1 = get_data(infile1)
+	data2 = get_data(infile2)
+
+	#print(ctaus)
+	#print(exp_median)
+
+	fig, ax = plt.subplots(figsize=(5,5))
+    # --- ratios ---
+	ctaus = data1["ctaus"]
+	ratio_med = data1["exp_median"] / data2["exp_median"]
+	ratio_1l = data1["exp_1s_low"]  / data2["exp_1s_low"]
+	ratio_1h = data1["exp_1s_high"] / data2["exp_1s_high"]
+	ratio_2l = data1["exp_2s_low"]  / data2["exp_2s_low"]
+	ratio_2h = data1["exp_2s_high"] / data2["exp_2s_high"]
+	ax.plot(ctaus, ratio_med, 'k--', lw=2, label='Expected Ratio')
+	ax.fill_between(ctaus, ratio_2l, ratio_2h,
+	            color='gold', alpha=0.5, label=r'$\pm2\sigma$ ratio')
+	ax.fill_between(ctaus, ratio_1l, ratio_1h,
+	            color='limegreen', alpha=0.8, label=r'$\pm1\sigma$ ratio')
+	
+	# --- Median expected (black dashed) and observed (solid) ---
+	#ax.plot(masses, obs, 'k-', lw=2, label='Observed')
+	
+	# --- Axes labels, limits, log scale ---
+	ax.set_xlabel("CTau [m]", fontsize=13)
+	ax.xaxis.label.set_horizontalalignment('right')
+	ax.xaxis.set_label_coords(1.0, ax.xaxis.get_label().get_position()[1]-0.065)
+
+
+	ax.set_ylabel(r"Ratio of 95% CL upper limit on BR(H$\to$SS)", fontsize=13)
+	ax.yaxis.label.set_verticalalignment('top')
+	ax.yaxis.set_label_coords(ax.yaxis.get_label().get_position()[0]-0.12, 0.66)
+
+	ax.set_xscale("log")
+	ax.set_ylim(0.05, 2.0)
+	ax.axhline(1.0, color="black", lw=1)
+
+	# --- CMS label and luminosity text ---
+	#"""
+	ax.text(0.0, 1.0, r"CMS", transform=ax.transAxes,
+	        fontsize=16, fontweight='bold', va='bottom')
+	ax.text(0.13, 1.0, r"Internal", transform=ax.transAxes,
+	        fontsize=14, style='italic', va='bottom')
+	ax.text(1.0, 1.0, r"63 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
+	        fontsize=12, ha='right', va='bottom')
+	#"""
+
+	# --- Legend ---
+	ax.legend(loc="upper right", frameon=False, fontsize=11)
+
+	plt.tight_layout()
+	plt.subplots_adjust(top=0.92) 
+
+	outfile = os.path.join("plots", infile1.replace(".json", "_ratio.pdf").split("/")[-1])
+	plt.savefig(outfile)
+
+
 def plot_multi_limit(infiles):
 
 	# Load
@@ -270,15 +329,15 @@ def main():
 
 	# Read in data
 
-	if len(sys.argv) == 2: 
-		infile = sys.argv[1]
-		plot_single_limit(infile)
-		return
-	else: 
-		filetag = sys.argv[1]
-		infiles = sys.argv[2:]
-		plot_multi_limit_debug(filetag, infiles)
-
+#	if len(sys.argv) == 2: 
+#		infile = sys.argv[1]
+#		plot_single_limit(infile)
+#		return
+#	else: 
+#		filetag = sys.argv[1]
+#		infiles = sys.argv[2:]
+#		plot_multi_limit_debug(filetag, infiles)
+    plot_ratio("output/HToSSTo4B_125_50_inc0.9_depth0.8.json","output/HToSSTo4B_125_50_inc0.9_depth0.8_statonly.json")
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 	main()

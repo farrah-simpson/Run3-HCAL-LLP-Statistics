@@ -101,8 +101,8 @@ def main():
 
     ctaus        = []
     limits_obs   = []
-    nevents_sig_ljdc = []
-    nevents_sig_sjdc = []
+    nevents_sig_ljdc_23 = []
+    nevents_sig_sjdc_23 = []
 
     limits_expected = {}
     for val in expected_percent: limits_expected[val] = []
@@ -173,10 +173,14 @@ def main():
     tree_sig.SetBranchStatus("jet*_DepthTagCand", 1) 
     tree_sig.SetBranchStatus("jet*_InclTagCand", 1) 
     tree_sig.SetBranchStatus("jet*_scores*", 1) 
+    tree_sig.SetBranchStatus("jet0_Pt", 1) 
+    tree_sig.SetBranchStatus("jet1_Pt", 1) 
     tree_sig.SetBranchStatus("weight*", 1) 
     tree_sig.SetBranchStatus("LLP*", 1) 
 
-    tree_sig_skim = tree_sig.CopyTree("Pass_PreSel == 1")
+    lj_train_cut = "(int(jet0_Pt * 1000) % 10) >= 8"
+    sj_train_cut = "(int(jet1_Pt * 1000) % 10) >= 8"
+    tree_sig_skim = tree_sig.CopyTree("Pass_PreSel == 1 && {lj_train_cut} && {sj_train_cut}")
 
     # ----- Loop over Signal Lifetimes ----- #
 
@@ -194,36 +198,27 @@ def main():
         hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target, "", 1, 0, 1)
         hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target, "", 1, 0, 1)
 
-        tree_sig_skim.Draw("0.5 >> hist_sig_ljdc_"+ctau_target, " {0} * (jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {1} && jet1_scores_inc_train80 > {2})".format(reweight, depth_score_cut, incl_score_cut ) )
-        tree_sig_skim.Draw("0.5 >> hist_sig_sjdc_"+ctau_target, " {0} * (jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {1} && jet0_scores_inc_train80 > {2})".format(reweight, depth_score_cut, incl_score_cut ) )
+        tree_sig_skim.Draw("0.5 >> hist_sig_ljdc_"+ctau_target, " {0} * ({1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3})".format(reweight, lj_train_cut, depth_score_cut, incl_score_cut ) )
+        tree_sig_skim.Draw("0.5 >> hist_sig_sjdc_"+ctau_target, " {0} * ({1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3})".format(reweight, sj_train_cut, depth_score_cut, incl_score_cut ) )
 
-        nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. # 100 to convert from minituple % --> net fraction 
-        nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. # 100 to convert from minituple % --> net fraction
+        nevents_sig_ljdc_temp_23 = hist_sig_ljdc.Integral() * SF_temp * 100. # 100 to convert from minituple % --> net fraction 
+        nevents_sig_sjdc_temp_23 = hist_sig_sjdc.Integral() * SF_temp * 100. # 100 to convert from minituple % --> net fraction
 
-        nevents_sig_ljdc.append( nevents_sig_ljdc_temp / SF_temp )
-        nevents_sig_sjdc.append( nevents_sig_sjdc_temp / SF_temp )
+        nevents_sig_ljdc_23.append( nevents_sig_ljdc_temp_23 / SF_temp )
+        nevents_sig_sjdc_23.append( nevents_sig_sjdc_temp_23 / SF_temp )
 
         # Replace test in template datacard
 
         output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
-        print( "Nsig (ljdc, sjdc):", nevents_sig_ljdc_temp, nevents_sig_sjdc_temp)
+        print( "Nsig (ljdc, sjdc):", nevents_sig_ljdc_temp_23, nevents_sig_sjdc_temp_23)
 
         replacements = {
-            "SIGLJDC": f"{nevents_sig_ljdc_temp:04.2f}", 
-            "SIGSJDC": f"{nevents_sig_sjdc_temp:04.2f}",
-            "BKGLJDC_23_B": f"{nevents_bkg_ljdc_srpred_btag_23:04.2f}",
-            "BKGLJDC_23_XB": f"{nevents_bkg_ljdc_srpred_nobtag_23:04.2f}",
-            "BKGSJDC_23_B": f"{nevents_bkg_sjdc_srpred_btag_23:04.2f}",
-            "BKGSJDC_23_XB": f"{nevents_bkg_sjdc_srpred_nobtag_23:04.2f}",
+            "SIGLJDC_23": f"{nevents_sig_ljdc_temp_23:04.2f}", 
+            "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:04.2f}",
             "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:04.2f}", 
             "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:04.2f}",
-            "BKGLJDC_22_B": f"{nevents_bkg_ljdc_srpred_btag_22:04.2f}",
-            "BKGLJDC_22_XB": f"{nevents_bkg_ljdc_srpred_nobtag_22:04.2f}",
-            "BKGSJDC_22_B": f"{nevents_bkg_sjdc_srpred_btag_22:04.2f}",
-            "BKGSJDC_22_XB": f"{nevents_bkg_sjdc_srpred_nobtag_22:04.2f}",
             "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:04.2f}", 
             "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:04.2f}",
-
         }
 
         pattern = re.compile("|".join(re.escape(k) for k in replacements))
@@ -263,8 +258,8 @@ def main():
     data["ctaus"] = ctaus
     data["limits_obs"] = limits_obs
     data["limits_exp"] = limits_expected
-    data["nevents_sig_ljdc"] = nevents_sig_ljdc
-    data["nevents_sig_sjdc"] = nevents_sig_sjdc
+    data["nevents_sig_ljdc_23"] = nevents_sig_ljdc_23
+    data["nevents_sig_sjdc_23"] = nevents_sig_sjdc_23
     data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
     data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
     data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
@@ -281,8 +276,8 @@ def main():
     print( "--------------------------------------" )
     print( "CTaus: ", ctaus )
     print( "Limits:", limits_expected["50.0"] )
-    print( "LJDC:  ", nevents_sig_ljdc )
-    print( "SJDC:  ", nevents_sig_sjdc )
+    print( "LJDC:  ", nevents_sig_ljdc_23 )
+    print( "SJDC:  ", nevents_sig_sjdc_23 )
     print( "--------------------------------------" )
     print( "Json file written to:", outfile_path )
 

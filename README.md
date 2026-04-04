@@ -56,12 +56,13 @@ python3 plot_limits.py <input_json_file> # makes typical brazil plot
 python3 plot_limits.py <output_filetag> <input_json_1> .... <input_json_N> # compares limits, signal yields, background yields
 ```
 ## How to Run Blinded Impact Plots
-
+```
 combineTool.py -M Impacts -d workspace.root -m 125 --doInitialFit -t -1 --rMin -100 --expectSignal 0 
 combineTool.py -M Impacts -d workspace.root -m 125 --doFits --rMin -100 -t -1 --expectSignal 0 
 combineTool.py -M Impacts -d  workspace.root-m 125 -o impacts.json
 plotImpacts.py -i impact.json -o impacts
 
+```
 ## To do
 
 Improvements needed:

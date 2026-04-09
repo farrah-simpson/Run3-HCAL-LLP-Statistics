@@ -246,18 +246,20 @@ def main():
         # Replace test in template datacard
 
         output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
-        print("Nsig 2022   (ljdc, sjdc):", nevents_sig_ljdc_temp_22, nevents_sig_sjdc_temp_22)
-        print("Nsig 2023   (ljdc, sjdc):", nevents_sig_ljdc_temp_23, nevents_sig_sjdc_temp_23)
+        print("Nevents LJDC 22:", nevents_sig_ljdc_22)
+        print("Nevents LJDC 23:", nevents_sig_ljdc_23)
+        print("Nevents SJDC 22:", nevents_sig_sjdc_22)
+        print("Nevents SJDC 23:", nevents_sig_sjdc_23)
 
         replacements = {
-            "SIGLJDC_23": f"{nevents_sig_ljdc_temp_23:04.2f}", 
-            "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:04.2f}",
-            "SIGLJDC_22": f"{nevents_sig_ljdc_temp_22:04.2f}", 
-            "SIGSJDC_22": f"{nevents_sig_sjdc_temp_22:04.2f}",
-            "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:04.2f}", 
-            "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:04.2f}",
-            "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:04.2f}", 
-            "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:04.2f}",
+            "SIGLJDC_23": f"{nevents_sig_ljdc_temp_23:.6e}", 
+            "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:.6e}",
+            "SIGLJDC_22": f"{nevents_sig_ljdc_temp_22:.6e}", 
+            "SIGSJDC_22": f"{nevents_sig_sjdc_temp_22:.6e}",
+            "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:.6e}", 
+            "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:.6e}",
+            "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:.6e}", 
+            "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:.6e}",
         }
 
         pattern = re.compile("|".join(re.escape(k) for k in replacements))
@@ -272,9 +274,10 @@ def main():
         match_all = True 
        
         match = re.search(r"Observed Limit:\s*r\s*<\s*([0-9.]+)", output)
+        ctaus.append( float(ctau_target) )
+
 
         if match:
-            ctaus.append( float(ctau_target) )
             limits_obs.append( float(match.group(1)) * SF_temp )
         else:
             limits_obs.append( -1 )
@@ -319,8 +322,11 @@ def main():
     print( "--------------------------------------" )
     print( "CTaus: ", ctaus )
     print( "Limits:", limits_expected["50.0"] )
-    print( "LJDC:  ", nevents_sig_ljdc )
-    print( "SJDC:  ", nevents_sig_sjdc )
+    print( "LJDC 23:  ", nevents_sig_ljdc_23 )
+    print( "SJDC 23:  ", nevents_sig_sjdc_23 )
+    print( "LJDC 22:  ", nevents_sig_ljdc_22 )
+    print( "SJDC 22:  ", nevents_sig_sjdc_22 )
+
 
     print( "--------------------------------------" )
     print( "Json file written to:", outfile_path )

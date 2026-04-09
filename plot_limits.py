@@ -40,8 +40,13 @@ def get_data(infile):
 	data_out["exp_2s_low"] = np.array( data_in["limits_exp"][" 2.5"] )[mask] #* 0.01
 	data_out["exp_2s_high"] = np.array( data_in["limits_exp"]["97.5"] )[mask] #* 0.01
 
-	data_out["nevents_sig_ljdc"] = np.array( data_in["nevents_sig_ljdc"] )[mask] #* 0.01
-	data_out["nevents_sig_sjdc"] = np.array( data_in["nevents_sig_sjdc"] )[mask] #* 0.01
+	data_out["nevents_sig_ljdc_23"] = np.array( data_in["nevents_sig_ljdc_23"] )[mask] #* 0.01
+	data_out["nevents_sig_sjdc_23"] = np.array( data_in["nevents_sig_sjdc_23"] )[mask] #* 0.01
+	data_out["nevents_sig_ljdc_22"] = np.array( data_in["nevents_sig_ljdc_22"] )[mask] #* 0.01
+	data_out["nevents_sig_sjdc_22"] = np.array( data_in["nevents_sig_sjdc_22"] )[mask] #* 0.01
+
+	data_out["nevents_sig_ljdc"] = data_out["nevents_sig_ljdc_22"] + data_out["nevents_sig_ljdc_23"]
+	data_out["nevents_sig_sjdc"] = data_out["nevents_sig_sjdc_22"] + data_out["nevents_sig_sjdc_23"]
 
 	bkg_ljdc_23  = data_in["nevents_bkg_ljdc_23"]
 	bkg_sjdc_23  = data_in["nevents_bkg_sjdc_23"]
@@ -329,15 +334,15 @@ def main():
 
 	# Read in data
 
-#	if len(sys.argv) == 2: 
-#		infile = sys.argv[1]
-#		plot_single_limit(infile)
-#		return
-#	else: 
-#		filetag = sys.argv[1]
-#		infiles = sys.argv[2:]
-#		plot_multi_limit_debug(filetag, infiles)
-    plot_ratio("output/HToSSTo4B_125_50_inc0.9_depth0.8.json","output/HToSSTo4B_125_50_inc0.9_depth0.8_statonly.json")
+	if len(sys.argv) == 2: 
+		infile = sys.argv[1]
+		plot_single_limit(infile)
+		return
+	else: 
+		filetag = sys.argv[1]
+		infiles = sys.argv[2:]
+		plot_multi_limit_debug(filetag, infiles)
+#    plot_ratio("output/HToSSTo4B_125_50_inc0.9_depth0.8.json","output/HToSSTo4B_125_50_inc0.9_depth0.8_statonly.json")
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 	main()

@@ -14,7 +14,8 @@ default_template_datacard = os.path.join( cwd, "templates/v1/datacard_TEMPLATE.t
 # Lifetimes (ctau) in in mm -- points to dynamically reweight to
 lifetimes    = ["10", "30", "50", "100", "200", "300", "500", "800", "1000", "2000", "3000", "5000", "10000"]
 
-# Temporary scale factor, otherwise get weird results
+# Temporary scale factor applied to signal yield to stabilize results in combine
+#limits are rescale back, so final results are unaffected otherwise get weird results
 SF_temp = 0.01
 
 # Use this for text scraping (expert only)
@@ -90,8 +91,10 @@ def main():
 
     ctaus        = []
     limits_obs   = []
-    nevents_sig_ljdc = []
-    nevents_sig_sjdc = []
+    nevents_sig_ljdc_23 = []
+    nevents_sig_sjdc_23 = []
+    nevents_sig_ljdc_22 = []
+    nevents_sig_sjdc_22 = []
 
 
     limits_expected = {}
@@ -106,6 +109,10 @@ def main():
     # if using a partial dataset, how much to scale this up by
     lumi_sf_23 = 1.0 
     lumi_sf_22 = 1.0 
+
+    lumi_2022 = 38.01
+    lumi_2023 = 30.12
+    lumi_total = lumi_2022 + lumi_2023
 
     infile_data_23 = [
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv1_scores.root",
@@ -222,21 +229,31 @@ def main():
             )
         )
 
+        #combined 2022+2023
         nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / train_frac # 100 to convert from minituple % --> net fraction 
         nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. /train_frac # 100 to convert from minituple % --> net fraction
-        nevents_sig_ljdc.append( nevents_sig_ljdc_temp / SF_temp )
-        nevents_sig_sjdc.append( nevents_sig_sjdc_temp / SF_temp )
+
+        nevents_sig_ljdc_temp_22 = nevents_sig_ljdc_temp * lumi_2022 / lumi_total
+        nevents_sig_ljdc_temp_23 = nevents_sig_ljdc_temp * lumi_2023 / lumi_total
+        nevents_sig_sjdc_temp_22 = nevents_sig_sjdc_temp * lumi_2022 / lumi_total
+        nevents_sig_sjdc_temp_23 = nevents_sig_sjdc_temp * lumi_2023 / lumi_total
+
+        nevents_sig_ljdc_22.append( nevents_sig_ljdc_temp_22 / SF_temp )
+        nevents_sig_ljdc_23.append( nevents_sig_ljdc_temp_23 / SF_temp )
+        nevents_sig_sjdc_22.append( nevents_sig_sjdc_temp_22 / SF_temp )
+        nevents_sig_sjdc_23.append( nevents_sig_sjdc_temp_23 / SF_temp )
 
         # Replace test in template datacard
 
         output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
-        print( "Nsig (ljdc, sjdc):", nevents_sig_ljdc_temp, nevents_sig_sjdc_temp)
+        print("Nsig 2022   (ljdc, sjdc):", nevents_sig_ljdc_temp_22, nevents_sig_sjdc_temp_22)
+        print("Nsig 2023   (ljdc, sjdc):", nevents_sig_ljdc_temp_23, nevents_sig_sjdc_temp_23)
 
         replacements = {
-            "SIGLJDC_23": f"{nevents_sig_ljdc_temp:04.2f}", 
-            "SIGSJDC_23": f"{nevents_sig_sjdc_temp:04.2f}",
-            "SIGLJDC_22": f"{nevents_sig_ljdc_temp:04.2f}", 
-            "SIGSJDC_22": f"{nevents_sig_sjdc_temp:04.2f}",
+            "SIGLJDC_23": f"{nevents_sig_ljdc_temp_23:04.2f}", 
+            "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:04.2f}",
+            "SIGLJDC_22": f"{nevents_sig_ljdc_temp_22:04.2f}", 
+            "SIGSJDC_22": f"{nevents_sig_sjdc_temp_22:04.2f}",
             "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:04.2f}", 
             "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:04.2f}",
             "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:04.2f}", 
@@ -282,8 +299,10 @@ def main():
     data["ctaus"] = ctaus
     data["limits_obs"] = limits_obs
     data["limits_exp"] = limits_expected
-    data["nevents_sig_ljdc"] = nevents_sig_ljdc
-    data["nevents_sig_sjdc"] = nevents_sig_sjdc
+    data["nevents_sig_ljdc_23"] = nevents_sig_ljdc_23
+    data["nevents_sig_sjdc_23"] = nevents_sig_sjdc_23
+    data["nevents_sig_ljdc_22"] = nevents_sig_ljdc_22
+    data["nevents_sig_sjdc_22"] = nevents_sig_sjdc_22
     data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
     data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
     data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22

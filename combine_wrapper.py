@@ -44,34 +44,23 @@ def parseArgs():
     return args
 
 # ------------------------------------------------------------------------------
-def calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_score_cut, additional_cut_jet0="", additional_cut_jet1=""): 
+def calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_score_cut, additional_cut_jet0="", additional_cut_jet1=""):
 
-    # This is really just an approximation, should use Gillian's more robust approach eventually
+    if additional_cut_jet0 != "": additional_cut_jet0 = f"({additional_cut_jet0}) && "
+    if additional_cut_jet1 != "": additional_cut_jet1 = f"({additional_cut_jet1}) && "
 
-    if additional_cut_jet0 != "": additional_cut_jet0 = "("+additional_cut_jet0+") && "
-    if additional_cut_jet1 != "": additional_cut_jet1 = "("+additional_cut_jet1+") && "
+    nevents_bkg_ljdc_cr_temp       = tree_data_skim.GetEntries(additional_cut_jet0 + "(jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet1_scores_inc_train80 < 0.2)")
+    nevents_bkg_sjdc_cr_temp       = tree_data_skim.GetEntries(additional_cut_jet1 + "(jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet0_scores_inc_train80 < 0.2)")
+    nevents_bkg_ljdc_cr_depth_temp = tree_data_skim.GetEntries(additional_cut_jet0 + "(jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {0} && jet1_scores_inc_train80 < 0.2)".format(depth_score_cut))
+    nevents_bkg_sjdc_cr_depth_temp = tree_data_skim.GetEntries(additional_cut_jet1 + "(jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {0} && jet0_scores_inc_train80 < 0.2)".format(depth_score_cut))
+    nevents_bkg_ljdc_sr_temp       = tree_data_skim.GetEntries(additional_cut_jet0 + "(jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet1_scores_inc_train80 > {0})".format(incl_score_cut))
+    nevents_bkg_sjdc_sr_temp       = tree_data_skim.GetEntries(additional_cut_jet1 + "(jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet0_scores_inc_train80 > {0})".format(incl_score_cut))
 
-    nevents_bkg_ljdc_cr_temp       = tree_data_skim.GetEntries( additional_cut_jet0 + "(jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet1_scores_inc_train80 < 0.2)".format( incl_score_cut ) )
-    nevents_bkg_sjdc_cr_temp       = tree_data_skim.GetEntries( additional_cut_jet1 + "(jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet0_scores_inc_train80 < 0.2)".format( incl_score_cut ) )
-    nevents_bkg_ljdc_cr_depth_temp = tree_data_skim.GetEntries( additional_cut_jet0 + "(jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {0} && jet1_scores_inc_train80 < 0.2)".format( depth_score_cut, incl_score_cut ) )
-    nevents_bkg_sjdc_cr_depth_temp = tree_data_skim.GetEntries( additional_cut_jet1 + "(jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {0} && jet0_scores_inc_train80 < 0.2)".format( depth_score_cut, incl_score_cut ) )
-    nevents_bkg_ljdc_sr_temp       = tree_data_skim.GetEntries( additional_cut_jet0 + "(jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet1_scores_inc_train80 > {0} )".format( incl_score_cut ) )
-    nevents_bkg_sjdc_sr_temp       = tree_data_skim.GetEntries( additional_cut_jet1 + "(jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet0_scores_inc_train80 > {0} )".format( incl_score_cut ) )
+    lj_ratio = (nevents_bkg_ljdc_cr_depth_temp / nevents_bkg_ljdc_cr_temp) if nevents_bkg_ljdc_cr_temp else 0.0
+    sj_ratio = (nevents_bkg_sjdc_cr_depth_temp / nevents_bkg_sjdc_cr_temp) if nevents_bkg_sjdc_cr_temp else 0.0
 
-    """
-    print( "nevents_bkg_ljdc_cr_temp", nevents_bkg_ljdc_cr_temp )       
-    print( "nevents_bkg_sjdc_cr_temp", nevents_bkg_sjdc_cr_temp )        
-    print( "nevents_bkg_ljdc_cr_depth_temp", nevents_bkg_ljdc_cr_depth_temp ) 
-    print( "nevents_bkg_sjdc_cr_depth_temp", nevents_bkg_sjdc_cr_depth_temp ) 
-    print( "nevents_bkg_ljdc_sr_temp", nevents_bkg_ljdc_sr_temp ) 
-    print( "nevents_bkg_sjdc_sr_temp",nevents_bkg_sjdc_sr_temp  ) 
-    """
-
-    nevents_bkg_ljdc_srpred = lumi_sf * nevents_bkg_ljdc_sr_temp * (nevents_bkg_ljdc_cr_depth_temp / nevents_bkg_ljdc_cr_temp)
-    nevents_bkg_sjdc_srpred = lumi_sf * nevents_bkg_sjdc_sr_temp * (nevents_bkg_sjdc_cr_depth_temp / nevents_bkg_sjdc_cr_temp)
-
-    print( "nevents_bkg_ljdc_srpred",nevents_bkg_ljdc_srpred  ) 
-    print( "nevents_bkg_sjdc_srpred",nevents_bkg_sjdc_srpred  ) 
+    nevents_bkg_ljdc_srpred = lumi_sf * nevents_bkg_ljdc_sr_temp * lj_ratio
+    nevents_bkg_sjdc_srpred = lumi_sf * nevents_bkg_sjdc_sr_temp * sj_ratio
 
     return nevents_bkg_ljdc_srpred, nevents_bkg_sjdc_srpred
 
@@ -101,8 +90,9 @@ def main():
 
     ctaus        = []
     limits_obs   = []
-    nevents_sig_ljdc_23 = []
-    nevents_sig_sjdc_23 = []
+    nevents_sig_ljdc = []
+    nevents_sig_sjdc = []
+
 
     limits_expected = {}
     for val in expected_percent: limits_expected[val] = []
@@ -114,22 +104,26 @@ def main():
     print("Reading in data tree... (this may take a few minutes)")
 
     # if using a partial dataset, how much to scale this up by
-    lumi_sf_23 = 1.0 # 2023 all eras
-    lumi_sf_22 = 6.8 # 2023D dummy
+    lumi_sf_23 = 1.0 
+    lumi_sf_22 = 1.0 
 
-    # currently only using a partial dataset (2023D corresponds to lumi scale factor above)
     infile_data_23 = [
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv1_allscores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv2_allscores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv3_allscores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023Cv4_allscores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023D_allscores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv2_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv3_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv4_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Dv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Dv2_scores.root",
+    ]
+    infile_data_22 = [
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Dv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Ev1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Fv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Gv1_scores.root",
     ]
 
-    infile_data_22 = ROOT.TFile.Open("/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v4.1/minituple_LLPskim_2023D_allscores.root")
-
     tree_data_23 = make_chain("NoSel", infile_data_23) 
-    tree_data_22   = infile_data_22.Get("NoSel")
+    tree_data_22   = make_chain("NoSel", infile_data_22)
 
     # Copy tree but only copy these branches
     tree_data_23.SetBranchStatus("*", 0) 
@@ -165,8 +159,8 @@ def main():
 
     print("Reading in signal tree...")
 
-    infile_sig = ROOT.TFile.Open(infilepath)
-    tree_sig   = infile_sig.Get("NoSel")
+    infile_sig = ROOT.TFile.Open(infilepath) 
+    tree_sig  = infile_sig.Get("NoSel")
 
     tree_sig.SetBranchStatus("*", 0) 
     tree_sig.SetBranchStatus("Pass_PreSel", 1) 
@@ -176,13 +170,18 @@ def main():
     tree_sig.SetBranchStatus("jet0_Pt", 1) 
     tree_sig.SetBranchStatus("jet1_Pt", 1) 
     tree_sig.SetBranchStatus("weight*", 1) 
+    tree_sig.SetBranchStatus("event_weight", 1) 
     tree_sig.SetBranchStatus("LLP*", 1) 
 
+    train_frac = 0.2
     lj_train_cut = "(int(jet0_Pt * 1000) % 10) >= 8"
     sj_train_cut = "(int(jet1_Pt * 1000) % 10) >= 8"
-    tree_sig_skim = tree_sig.CopyTree("Pass_PreSel == 1 && {lj_train_cut} && {sj_train_cut}")
+
+#    tree_sig_skim = tree_sig.CopyTree(f"Pass_PreSel == 1 && {lj_train_cut} && {sj_train_cut}")
+    tree_sig_skim = tree_sig
 
     # ----- Loop over Signal Lifetimes ----- #
+
 
     print( "Getting Event Counts...")
 
@@ -193,28 +192,51 @@ def main():
 
         reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
         reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
-        reweight = "(weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+        reweight = "( event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
         hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target, "", 1, 0, 1)
         hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target, "", 1, 0, 1)
 
-        tree_sig_skim.Draw("0.5 >> hist_sig_ljdc_"+ctau_target, " {0} * ({1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3})".format(reweight, lj_train_cut, depth_score_cut, incl_score_cut ) )
-        tree_sig_skim.Draw("0.5 >> hist_sig_sjdc_"+ctau_target, " {0} * ({1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3})".format(reweight, sj_train_cut, depth_score_cut, incl_score_cut ) )
+        print("tree entries:", tree_sig.GetEntries())
+        print("neg/nan weight:", tree_sig.GetEntries("Pass_PreSel == 1 && !(weight >= 0)"))
+        print("nan LLP0:", tree_sig.GetEntries("Pass_PreSel == 1 && !(LLP0_DecayCtau == LLP0_DecayCtau)"))
+        print("nan LLP1:", tree_sig.GetEntries("Pass_PreSel == 1 && !(LLP1_DecayCtau == LLP1_DecayCtau)"))
+        print("zero/neg ctau LLP0:", tree_sig.GetEntries("LLP0_DecayCtau <= 0"))
+        print("zero/neg ctau LLP1:", tree_sig.GetEntries("LLP1_DecayCtau <= 0"))
+        print("reweight =", reweight)
+        print("huge weight:", tree_sig.GetEntries("abs(event_weight) > 2"))
 
-        nevents_sig_ljdc_temp_23 = hist_sig_ljdc.Integral() * SF_temp * 100. # 100 to convert from minituple % --> net fraction 
-        nevents_sig_sjdc_temp_23 = hist_sig_sjdc.Integral() * SF_temp * 100. # 100 to convert from minituple % --> net fraction
+#        tree_sig_skim.Draw("0.5 >> hist_sig_ljdc_"+ctau_target, " {0} * (jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {1} && jet1_scores_inc_train80 > {2})".format(reweight, depth_score_cut, incl_score_cut ) )
+#        tree_sig_skim.Draw("0.5 >> hist_sig_sjdc_"+ctau_target, " {0} * (jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {1} && jet0_scores_inc_train80 > {2})".format(reweight, depth_score_cut, incl_score_cut ) )
 
-        nevents_sig_ljdc_23.append( nevents_sig_ljdc_temp_23 / SF_temp )
-        nevents_sig_sjdc_23.append( nevents_sig_sjdc_temp_23 / SF_temp )
+        tree_sig_skim.Draw(
+            "0.5 >> hist_sig_ljdc_"+ctau_target,
+            " ({0}) * ( Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3})".format(
+                reweight, lj_train_cut, depth_score_cut, incl_score_cut
+            )
+        )
+        tree_sig_skim.Draw(
+            "0.5 >> hist_sig_sjdc_"+ctau_target,
+            " ({0}) * ( Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3})".format(
+                reweight, sj_train_cut, depth_score_cut, incl_score_cut
+            )
+        )
+
+        nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / train_frac # 100 to convert from minituple % --> net fraction 
+        nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. /train_frac # 100 to convert from minituple % --> net fraction
+        nevents_sig_ljdc.append( nevents_sig_ljdc_temp / SF_temp )
+        nevents_sig_sjdc.append( nevents_sig_sjdc_temp / SF_temp )
 
         # Replace test in template datacard
 
         output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
-        print( "Nsig (ljdc, sjdc):", nevents_sig_ljdc_temp_23, nevents_sig_sjdc_temp_23)
+        print( "Nsig (ljdc, sjdc):", nevents_sig_ljdc_temp, nevents_sig_sjdc_temp)
 
         replacements = {
-            "SIGLJDC_23": f"{nevents_sig_ljdc_temp_23:04.2f}", 
-            "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:04.2f}",
+            "SIGLJDC_23": f"{nevents_sig_ljdc_temp:04.2f}", 
+            "SIGSJDC_23": f"{nevents_sig_sjdc_temp:04.2f}",
+            "SIGLJDC_22": f"{nevents_sig_ljdc_temp:04.2f}", 
+            "SIGSJDC_22": f"{nevents_sig_sjdc_temp:04.2f}",
             "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:04.2f}", 
             "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:04.2f}",
             "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:04.2f}", 
@@ -254,12 +276,14 @@ def main():
             print("WARNING: could not extract all limit information for:", ctau_target, "(more info available in debug mode)" )
             if debug: print( output )
 
+
+
     data = {}
     data["ctaus"] = ctaus
     data["limits_obs"] = limits_obs
     data["limits_exp"] = limits_expected
-    data["nevents_sig_ljdc_23"] = nevents_sig_ljdc_23
-    data["nevents_sig_sjdc_23"] = nevents_sig_sjdc_23
+    data["nevents_sig_ljdc"] = nevents_sig_ljdc
+    data["nevents_sig_sjdc"] = nevents_sig_sjdc
     data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
     data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
     data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
@@ -276,8 +300,9 @@ def main():
     print( "--------------------------------------" )
     print( "CTaus: ", ctaus )
     print( "Limits:", limits_expected["50.0"] )
-    print( "LJDC:  ", nevents_sig_ljdc_23 )
-    print( "SJDC:  ", nevents_sig_sjdc_23 )
+    print( "LJDC:  ", nevents_sig_ljdc )
+    print( "SJDC:  ", nevents_sig_sjdc )
+
     print( "--------------------------------------" )
     print( "Json file written to:", outfile_path )
 

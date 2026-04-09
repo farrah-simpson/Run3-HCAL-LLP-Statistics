@@ -8,7 +8,7 @@ observation             0          0           0         0
 bin                     LJDC_23        LJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        SJDC_22       SJDC_22
 process                 SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg
 process                 0              1              0              1              0              1             0              1
-rate                    SIGLJDC    0.95       SIGSJDC      0.24      SIGLJDC         2.04      SIGSJDC     0.53
+rate                    2.09    0.95       0.49      0.24      2.09         2.04      0.49     0.53
 ------------
 #Lumi signal only
 lumi_23_22  lnN              1.0017         -              1.0017         -              1.0138         -              1.0138              -

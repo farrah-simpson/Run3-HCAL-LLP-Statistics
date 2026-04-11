@@ -110,8 +110,8 @@ def main():
     lumi_sf_23 = 1.0 
     lumi_sf_22 = 1.0 
 
-    lumi_2022 = 38.01
-    lumi_2023 = 30.12
+    lumi_2022 = 31.51
+    lumi_2023 =28.91
     lumi_total = lumi_2022 + lumi_2023
 
     infile_data_23 = [
@@ -152,6 +152,7 @@ def main():
     tree_data_skim_23 = tree_data_23.CopyTree("Pass_PreSel == 1")
     tree_data_skim_22 = tree_data_22.CopyTree("Pass_PreSel == 1")
 
+#currently not using... used values evaluated from Gillian until calculate_bkg_prediction is updated
     # Btag score corresponds to 2023 post BPIX (TODO: Fix)
     nevents_bkg_ljdc_srpred_23, nevents_bkg_sjdc_srpred_23               = calculate_bkg_prediction(tree_data_skim_23, lumi_sf_23, incl_score_cut, depth_score_cut) #, additional_cut_jet0="", additional_cut_jet1="")
     nevents_bkg_ljdc_srpred_btag_23, nevents_bkg_sjdc_srpred_btag_23     = calculate_bkg_prediction(tree_data_skim_23, lumi_sf_23, incl_score_cut, depth_score_cut, "jet0_DeepCSV_prob_b > 0.2435", "jet1_DeepCSV_prob_b > 0.2435") #, additional_cut_jet0="", additional_cut_jet1="")
@@ -179,10 +180,16 @@ def main():
     tree_sig.SetBranchStatus("weight*", 1) 
     tree_sig.SetBranchStatus("event_weight", 1) 
     tree_sig.SetBranchStatus("LLP*", 1) 
-
+    tree_sig.SetBranchStatus("L1_prescale_weight", 1) 
+    tree_sig.SetBranchStatus("jet0_jet1_dPhi", 1)
+    tree_sig.SetBranchStatus("Flag_METFilters_2022_2023_PromptReco", 1)
+    tree_sig.SetBranchStatus("Pass_HLTDisplacedJet", 1) 
+    
     train_frac = 0.2
     lj_train_cut = "(int(jet0_Pt * 1000) % 10) >= 8"
     sj_train_cut = "(int(jet1_Pt * 1000) % 10) >= 8"
+
+    deltaPhi_cut = "(abs(jet0_jet1_dPhi) > 0.2)"
 
 #    tree_sig_skim = tree_sig.CopyTree(f"Pass_PreSel == 1 && {lj_train_cut} && {sj_train_cut}")
     tree_sig_skim = tree_sig
@@ -199,33 +206,30 @@ def main():
 
         reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
         reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
-        reweight = "( event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+        reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
         hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target, "", 1, 0, 1)
         hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target, "", 1, 0, 1)
 
         print("tree entries:", tree_sig.GetEntries())
-        print("neg/nan weight:", tree_sig.GetEntries("Pass_PreSel == 1 && !(weight >= 0)"))
-        print("nan LLP0:", tree_sig.GetEntries("Pass_PreSel == 1 && !(LLP0_DecayCtau == LLP0_DecayCtau)"))
-        print("nan LLP1:", tree_sig.GetEntries("Pass_PreSel == 1 && !(LLP1_DecayCtau == LLP1_DecayCtau)"))
-        print("zero/neg ctau LLP0:", tree_sig.GetEntries("LLP0_DecayCtau <= 0"))
-        print("zero/neg ctau LLP1:", tree_sig.GetEntries("LLP1_DecayCtau <= 0"))
+#        print("neg/nan weight:", tree_sig.GetEntries("Pass_PreSel == 1 && !(weight >= 0)"))
+#        print("nan LLP0:", tree_sig.GetEntries("Pass_PreSel == 1 && !(LLP0_DecayCtau == LLP0_DecayCtau)"))
+#        print("nan LLP1:", tree_sig.GetEntries("Pass_PreSel == 1 && !(LLP1_DecayCtau == LLP1_DecayCtau)"))
+#        print("zero/neg ctau LLP0:", tree_sig.GetEntries("LLP0_DecayCtau <= 0"))
+#        print("zero/neg ctau LLP1:", tree_sig.GetEntries("LLP1_DecayCtau <= 0"))
         print("reweight =", reweight)
-        print("huge weight:", tree_sig.GetEntries("abs(event_weight) > 2"))
-
-#        tree_sig_skim.Draw("0.5 >> hist_sig_ljdc_"+ctau_target, " {0} * (jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {1} && jet1_scores_inc_train80 > {2})".format(reweight, depth_score_cut, incl_score_cut ) )
-#        tree_sig_skim.Draw("0.5 >> hist_sig_sjdc_"+ctau_target, " {0} * (jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {1} && jet0_scores_inc_train80 > {2})".format(reweight, depth_score_cut, incl_score_cut ) )
+#        print("huge weight:", tree_sig.GetEntries("abs(event_weight) > 2"))
 
         tree_sig_skim.Draw(
             "0.5 >> hist_sig_ljdc_"+ctau_target,
-            " ({0}) * ( Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3})".format(
-                reweight, lj_train_cut, depth_score_cut, incl_score_cut
+            " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3} && {4})".format(
+                reweight, lj_train_cut, depth_score_cut, incl_score_cut, deltaPhi_cut
             )
         )
         tree_sig_skim.Draw(
             "0.5 >> hist_sig_sjdc_"+ctau_target,
-            " ({0}) * ( Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3})".format(
-                reweight, sj_train_cut, depth_score_cut, incl_score_cut
+            " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3} && {4})".format(
+                reweight, sj_train_cut, depth_score_cut, incl_score_cut, deltaPhi_cut
             )
         )
 
@@ -256,10 +260,10 @@ def main():
             "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:.6e}",
             "SIGLJDC_22": f"{nevents_sig_ljdc_temp_22:.6e}", 
             "SIGSJDC_22": f"{nevents_sig_sjdc_temp_22:.6e}",
-            "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:.6e}", 
-            "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:.6e}",
-            "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:.6e}", 
-            "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:.6e}",
+#            "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:.6e}", 
+#            "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:.6e}",
+#            "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:.6e}", 
+#            "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:.6e}",
         }
 
         pattern = re.compile("|".join(re.escape(k) for k in replacements))
@@ -322,10 +326,10 @@ def main():
     print( "--------------------------------------" )
     print( "CTaus: ", ctaus )
     print( "Limits:", limits_expected["50.0"] )
-    print( "LJDC 23:  ", nevents_sig_ljdc_23 )
-    print( "SJDC 23:  ", nevents_sig_sjdc_23 )
-    print( "LJDC 22:  ", nevents_sig_ljdc_22 )
-    print( "SJDC 22:  ", nevents_sig_sjdc_22 )
+    print( "LJDC 23:  ", nevents_sig_ljdc_temp_23 )
+    print( "SJDC 23:  ", nevents_sig_sjdc_temp_23 )
+    print( "LJDC 22:  ", nevents_sig_ljdc_temp_22 )
+    print( "SJDC 22:  ", nevents_sig_sjdc_temp_22 )
 
 
     print( "--------------------------------------" )

@@ -5,6 +5,8 @@ import subprocess
 import argparse
 import os 
 import json 
+import tempfile
+import glob
 
 ROOT.gROOT.SetBatch(True)
 
@@ -193,14 +195,18 @@ def main():
         for val in expected_percent: limits_expected[val] = []
  
         # ----- Read in Data (Background Prediction) ----- #
-   
-        outfile_temp = ROOT.TFile("skim_temp_{0}.root".format(unique_filetag),"RECREATE")
+
+        # Keep temp ROOT file out of your quota-heavy working dir, and clean it up after use
+        tmpdir = tempfile.mkdtemp(prefix="llp_limits_")
+        tmp_root = os.path.join(tmpdir, f"skim_temp_{unique_filetag}.root")
+        outfile_temp = ROOT.TFile(tmp_root, "RECREATE")
+
         outfile_temp.cd()
         tree_data_skim_23 = tree_data_23.CopyTree("Pass_PreSel == 1")
         tree_data_skim_22 = tree_data_22.CopyTree("Pass_PreSel == 1")
       
-        nevents_bkg_ljdc_srpred_23, nevents_bkg_sjdc_srpred_23  = row["bkg"][2023]["lj"], row["bkg"][2023]["lj"]
-        nevents_bkg_ljdc_srpred_22, nevents_bkg_sjdc_srpred_22  = row["bkg"][2022]["lj"], row["bkg"][2022]["lj"] 
+        nevents_bkg_ljdc_srpred_23, nevents_bkg_sjdc_srpred_23  = row["bkg"][2023]["lj"], row["bkg"][2023]["sj"]
+        nevents_bkg_ljdc_srpred_22, nevents_bkg_sjdc_srpred_22  = row["bkg"][2022]["lj"], row["bkg"][2022]["sj"] 
      
         # ----- Read in Signal ----- #
      
@@ -282,6 +288,7 @@ def main():
 
             # Replace test in template datacard
             output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
+
             print("Nevents LJDC 22:", nevents_sig_ljdc_22)
             print("Nevents LJDC 23:", nevents_sig_ljdc_23)
             print("Nevents SJDC 22:", nevents_sig_sjdc_22)
@@ -305,6 +312,16 @@ def main():
                     fout.write(pattern.sub(lambda m: replacements[m.group(0)], line))
 
             output = subprocess.check_output("combine -M AsymptoticLimits {}".format(output_file), shell=True, text=True)
+
+#            if os.path.exists(output_file):
+#                os.remove(output_file)
+
+            # remove combine ROOT byproducts
+            for f in glob.glob("higgsCombine*.root"):
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
 
             match_all = True 
        
@@ -330,38 +347,47 @@ def main():
                 print("WARNING: could not extract all limit information for:", ctau_target, "(more info available in debug mode)" )
                 if debug: print( output )
 
-    data = {}
-    data["ctaus"] = ctaus
-    data["limits_obs"] = limits_obs
-    data["limits_exp"] = limits_expected
-    data["nevents_sig_ljdc_23"] = nevents_sig_ljdc_23
-    data["nevents_sig_sjdc_23"] = nevents_sig_sjdc_23
-    data["nevents_sig_ljdc_22"] = nevents_sig_ljdc_22
-    data["nevents_sig_sjdc_22"] = nevents_sig_sjdc_22
-    data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
-    data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
-    data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
-    data["nevents_bkg_sjdc_22"] = nevents_bkg_sjdc_srpred_22
-
-    if not os.path.exists(output_dir): 
-        os.makedirs(output_dir)
-
-    outfile_path = os.path.join( output_dir, "{0}_inc{1}_{2}_depth{3}_{4}.json".format(filetag, lj_inc, sj_inc, lj_depth, sj_depth ) )
-
-    with open(outfile_path, "w") as f:
-        json.dump(data, f, indent=2)
-
-    print( "--------------------------------------" )
-    print( "CTaus: ", ctaus )
-    print( "Limits:", limits_expected["50.0"] )
-    print( "LJDC 23:  ", nevents_sig_ljdc_temp_23 )
-    print( "SJDC 23:  ", nevents_sig_sjdc_temp_23 )
-    print( "LJDC 22:  ", nevents_sig_ljdc_temp_22 )
-    print( "SJDC 22:  ", nevents_sig_sjdc_temp_22 )
+            outfile_temp.Close()
+            if os.path.exists(tmp_root):
+                os.remove(tmp_root)
+            try:
+                os.rmdir(tmpdir)
+            except OSError:
+                pass
 
 
-    print( "--------------------------------------" )
-    print( "Json file written to:", outfile_path )
+        data = {}
+        data["ctaus"] = ctaus
+        data["limits_obs"] = limits_obs
+        data["limits_exp"] = limits_expected
+        data["nevents_sig_ljdc_23"] = nevents_sig_ljdc_23
+        data["nevents_sig_sjdc_23"] = nevents_sig_sjdc_23
+        data["nevents_sig_ljdc_22"] = nevents_sig_ljdc_22
+        data["nevents_sig_sjdc_22"] = nevents_sig_sjdc_22
+        data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
+        data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
+        data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
+        data["nevents_bkg_sjdc_22"] = nevents_bkg_sjdc_srpred_22
+    
+        if not os.path.exists(output_dir): 
+            os.makedirs(output_dir)
+    
+        outfile_path = os.path.join( output_dir, "{0}_inc{1}_{2}_depth{3}_{4}.json".format(filetag, lj_inc, sj_inc, lj_depth, sj_depth ) )
+    
+        with open(outfile_path, "w") as f:
+            json.dump(data, f, indent=2)
+    
+        print( "--------------------------------------" )
+        print( "CTaus: ", ctaus )
+        print( "Limits:", limits_expected["50.0"] )
+        print( "LJDC 23:  ", nevents_sig_ljdc_temp_23 )
+        print( "SJDC 23:  ", nevents_sig_sjdc_temp_23 )
+        print( "LJDC 22:  ", nevents_sig_ljdc_temp_22 )
+        print( "SJDC 22:  ", nevents_sig_sjdc_temp_22 )
+    
+    
+        print( "--------------------------------------" )
+        print( "Json file written to:", outfile_path )
 
 if __name__ == '__main__':
     main()

@@ -105,7 +105,7 @@ def plot_single_limit(infile):
 	ax.text(1.0, 1.0, r"63 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
 	        fontsize=12, ha='right', va='bottom')
 	#"""
-
+#60.42 fb-1
 	# --- Legend ---
 	ax.legend(loc="upper right", frameon=False, fontsize=11)
 
@@ -116,6 +116,65 @@ def plot_single_limit(infile):
 	plt.savefig(outfile)
 
 # -------------------------------------------------------------------------------------------------
+
+def plot_limit_comparison(infiles, labels=None, outfile="plots/limit_comparison.pdf"):
+    """
+    Compare expected limits for multiple cut configurations on one plot.
+
+    Parameters
+    ----------
+    infiles : list[str]
+        List of json files.
+    labels : list[str] or None
+        Legend labels for each file. If None, use file basenames.
+    outfile : str
+        Output pdf path.
+    """
+
+    if labels is None:
+        labels = [os.path.basename(f).replace(".json", "") for f in infiles]
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+
+    for infile, label in zip(infiles, labels):
+        data = get_data(infile)
+
+        ax.plot(
+            data["ctaus"],
+            data["exp_median"],
+            lw=2,
+            label=label,
+        )
+
+    ax.set_xlabel("CTau [m]", fontsize=13)
+    ax.xaxis.label.set_horizontalalignment('right')
+    ax.xaxis.set_label_coords(1.0, ax.xaxis.get_label().get_position()[1] - 0.065)
+
+    ax.set_ylabel(r"95% CL upper limit on BR(H$\to$SS)", fontsize=13)
+    ax.yaxis.label.set_verticalalignment('top')
+    ax.yaxis.set_label_coords(ax.yaxis.get_label().get_position()[0] - 0.12, 0.66)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_ylim(0.0005, 1.0)
+    ax.grid(True, which="both", ls="--", lw=0.5, alpha=0.6)
+
+    ax.text(0.0, 1.0, r"CMS", transform=ax.transAxes,
+            fontsize=16, fontweight='bold', va='bottom')
+    ax.text(0.13, 1.0, r"Internal", transform=ax.transAxes,
+            fontsize=14, style='italic', va='bottom')
+    ax.text(1.0, 1.0, r"63 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
+            fontsize=12, ha='right', va='bottom')
+
+    ax.legend(loc="best", frameon=False, fontsize=10)
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.92)
+    plt.savefig(outfile)
+    plt.close(fig)
+
+# -------------------------------------------------------------------------------------------------
+
 def plot_ratio(infile1, infile2):
 	# Load
 	data1 = get_data(infile1)
@@ -332,17 +391,39 @@ def plot_multi_limit_debug(outfiletag, infiles):
 # -------------------------------------------------------------------------------------------------
 def main():
 
-	# Read in data
+    #single limit plot
+    #	if len(sys.argv) == 2: 
+    #		infile = sys.argv[1]
+    #		plot_single_limit(infile)
+    #		return
+    #	else: 
+    #		filetag = sys.argv[1]
+    #		infiles = sys.argv[2:]
+    #		plot_multi_limit_debug(filetag, infiles)
+    
+    #limit ratio plot
+    #    plot_ratio("output/HToSSTo4B_125_50_inc0.9_depth0.8.json","output/HToSSTo4B_125_50_inc0.9_depth0.8_statonly.json")
+    
+    #limit comparison plot
 
-	if len(sys.argv) == 2: 
-		infile = sys.argv[1]
-		plot_single_limit(infile)
-		return
-	else: 
-		filetag = sys.argv[1]
-		infiles = sys.argv[2:]
-		plot_multi_limit_debug(filetag, infiles)
-#    plot_ratio("output/HToSSTo4B_125_50_inc0.9_depth0.8.json","output/HToSSTo4B_125_50_inc0.9_depth0.8_statonly.json")
+    filetag = "HToSSTo4B_125_50" 
+    
+    outdir = "output/"
+    labels = [
+    #    "LJDC 0.965/0.695, SJDC 0.965/0.315",
+        "LJDC 0.965/0.845, SJDC 0.975/0.375",
+        "LJDC 0.975/0.415, SJDC 0.975/0.415",
+    ]
+    
+    
+    infiles = [
+    #    os.path.join(outdir, "{0}_inc0.695_0.315_depth0.965_0.965.json".format(filetag)),
+        os.path.join(outdir, "{0}_inc0.845_0.375_depth0.965_0.975.json".format(filetag)),
+        os.path.join(outdir, "{0}_inc0.415_0.415_depth0.975_0.975.json".format(filetag)),
+    ]
+    
+    plot_limit_comparison(infiles, labels, outfile="plots/limit_comparison.pdf")
+
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 	main()

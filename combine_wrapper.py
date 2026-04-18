@@ -131,6 +131,22 @@ def main():
                 2023: {"lj": 3.77, "sj": 2.60, "comb": 4.72},
             },
         },
+        {
+            "lj_depth": 0.95,
+            "lj_inc": 0.97,
+            "sj_depth": 0.95,
+            "sj_inc": 0.97,
+            "CR": 0.20,
+            "bkg": {
+                2022: {"lj": 1.00, "sj": 0.36, "comb": 1.38},
+                2023: {"lj": 1.65,  "sj": 0.71, "comb": 2.33},
+            },
+            "bkg_err": {
+                2022: {"lj": 0.08, "sj": 0.05, "comb": 0.1},
+                2023: {"lj": 0.11, "sj": 0.11, "comb": 0.13},
+            },
+        },
+ 
     ]
     print("Reading in data tree... (this may take a few minutes)")
     

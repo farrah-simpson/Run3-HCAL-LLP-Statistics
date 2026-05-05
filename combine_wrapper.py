@@ -39,13 +39,15 @@ def parseArgs():
     parser.add_argument("-f", "--filetag",    action="store", help="Input file tag", required=True)
     parser.add_argument("-c", "--ctau",       action="store", help="Input file lifetime", required=True)
     parser.add_argument("-o", "--output-dir", action="store", default="output", help="Output directory")
+    parser.add_argument("--input-jer-up", action="store", help="Input signal ROOT file with JER up", required=True)
+    parser.add_argument("--input-jer-down", action="store", help="Input signal ROOT file with JER down", required=True)
 
     args = parser.parse_args()
 
     return args
 
 # ------------------------------------------------------------------------------
-###INSERT THE VALUES FOR NOW
+### INSERT THE VALUES FROM TABLE BELOW FOR NOW
 def calculate_bkg_prediction(tree_data_skim, lumi_sf, incl_score_cut, depth_score_cut, additional_cut_jet0="", additional_cut_jet1=""):
 
     if additional_cut_jet0 != "": additional_cut_jet0 = f"({additional_cut_jet0}) && "
@@ -71,6 +73,85 @@ def make_chain(tree_name, file_list):
     for f in file_list:
         chain.Add(f)
     return chain
+
+def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, sys="nominal"):
+
+    # if using a partial dataset, how much to scale this up by
+    lumi_sf_23 = 1.0 
+    lumi_sf_22 = 1.0 
+    
+    lumi_2022 = 31.51
+    lumi_2023 =28.91
+    lumi_total = lumi_2022 + lumi_2023
+ 
+    # ----- Read in Signal ----- #
+ 
+    print("Reading in signal tree...")
+ 
+    infile_sig = ROOT.TFile.Open(infilepath) 
+    tree_sig  = infile_sig.Get("NoSel")
+ 
+    tree_sig.SetBranchStatus("*", 0) 
+    tree_sig.SetBranchStatus("Pass_PreSel", 1) 
+    tree_sig.SetBranchStatus("jet*_DepthTagCand", 1) 
+    tree_sig.SetBranchStatus("jet*_InclTagCand", 1) 
+    tree_sig.SetBranchStatus("jet*_scores*", 1) 
+    tree_sig.SetBranchStatus("jet0_Pt", 1) 
+    tree_sig.SetBranchStatus("jet1_Pt", 1) 
+    tree_sig.SetBranchStatus("weight*", 1) 
+    tree_sig.SetBranchStatus("event_weight", 1) 
+    tree_sig.SetBranchStatus("LLP*", 1) 
+    tree_sig.SetBranchStatus("L1_prescale_weight", 1) 
+    tree_sig.SetBranchStatus("jet0_jet1_dPhi", 1)
+    tree_sig.SetBranchStatus("Flag_METFilters_2022_2023_PromptReco", 1)
+    tree_sig.SetBranchStatus("Pass_HLTDisplacedJet", 1) 
+    
+    train_frac = 0.2
+    lj_train_cut = "(int(jet0_Pt * 1000) % 10) >= 8"
+    sj_train_cut = "(int(jet1_Pt * 1000) % 10) >= 8"
+ 
+    deltaPhi_cut = "(abs(jet0_jet1_dPhi) > 0.2)"
+
+    # Lifetime Reweight
+
+    reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
+    reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
+    reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+
+    hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target+sys, "", 1, 0, 1)
+    hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target+sys, "", 1, 0, 1)
+
+    print("tree entries:", tree_sig.GetEntries())
+    print("reweight =", reweight)
+
+    tree_sig.Draw(
+       "0.5 >> hist_sig_ljdc_"+ctau_target+sys,
+       " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3} && {4})".format(
+           reweight, lj_train_cut, lj_depth, lj_inc, deltaPhi_cut
+       )
+    )
+
+    tree_sig.Draw(
+       "0.5 >> hist_sig_sjdc_"+ctau_target+sys,
+       " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3} && {4})".format(
+           reweight, sj_train_cut, sj_depth, sj_inc, deltaPhi_cut
+       )
+    )
+
+    #combined 2022+2023
+    nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / train_frac # 100 to convert from minituple % --> net fraction 
+    nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. /train_frac # 100 to convert from minituple % --> net fraction
+
+    infile_sig.Close()
+
+    return {
+    "SIGLJDC_22": nevents_sig_ljdc_temp * lumi_2022 / lumi_total,
+    "SIGLJDC_23": nevents_sig_ljdc_temp * lumi_2023 / lumi_total,
+    "SIGSJDC_22": nevents_sig_sjdc_temp * lumi_2022 / lumi_total,
+    "SIGSJDC_23": nevents_sig_sjdc_temp * lumi_2023 / lumi_total,
+    }
+
+
 # ------------------------------------------------------------------------------
 def main():
 
@@ -87,21 +168,21 @@ def main():
 
     bkg_table = [
         {
-            "lj_depth": 0.965,
-            "lj_inc": 0.695,
-            "sj_depth": 0.965,
-            "sj_inc": 0.315,
-            "CR": 0.20,
-            "bkg": {
-                2022: {"lj": 13.56, "sj": 21.45, "comb": 37.15},
-                2023: {"lj": 0.58,  "sj": 16.56, "comb": 97.65},
-            },
-            "bkg_err": {
-                2022: {"lj": 1.40, "sj": 4.13, "comb": 3.27},
-                2023: {"lj": 0.03, "sj": 2.86, "comb": 3.50},
-            },
-        },
-        {
+#            "lj_depth": 0.965,
+#            "lj_inc": 0.695,
+#            "sj_depth": 0.965,
+#            "sj_inc": 0.315,
+#            "CR": 0.20,
+#            "bkg": {
+#                2022: {"lj": 13.56, "sj": 21.45, "comb": 37.15},
+#                2023: {"lj": 0.58,  "sj": 16.56, "comb": 97.65},
+#            },
+#            "bkg_err": {
+#                2022: {"lj": 1.40, "sj": 4.13, "comb": 3.27},
+#                2023: {"lj": 0.03, "sj": 2.86, "comb": 3.50},
+#            },
+#        },
+#        {
             "lj_depth": 0.965,
             "lj_inc": 0.845,
             "sj_depth": 0.975,
@@ -116,48 +197,40 @@ def main():
                 2023: {"lj": 0.72, "sj": 2.86, "comb": 2.51},
             },
         },
-        {
-            "lj_depth": 0.975,
-            "lj_inc": 0.415,
-            "sj_depth": 0.975,
-            "sj_inc": 0.415,
-            "CR": 0.20,
-            "bkg": {
-                2022: {"lj": 24.01, "sj": 14.59, "comb": 38.52},
-                2023: {"lj": 43.68, "sj": 15.04, "comb": 61.36},
-            },
-            "bkg_err": {
-                2022: {"lj": 2.90, "sj": 3.08, "comb": 3.98},
-                2023: {"lj": 3.77, "sj": 2.60, "comb": 4.72},
-            },
-        },
-        {
-            "lj_depth": 0.95,
-            "lj_inc": 0.97,
-            "sj_depth": 0.95,
-            "sj_inc": 0.97,
-            "CR": 0.20,
-            "bkg": {
-                2022: {"lj": 1.00, "sj": 0.36, "comb": 1.38},
-                2023: {"lj": 1.65,  "sj": 0.71, "comb": 2.33},
-            },
-            "bkg_err": {
-                2022: {"lj": 0.08, "sj": 0.05, "comb": 0.1},
-                2023: {"lj": 0.11, "sj": 0.11, "comb": 0.13},
-            },
-        },
+#        {
+#            "lj_depth": 0.975,
+#            "lj_inc": 0.415,
+#            "sj_depth": 0.975,
+#            "sj_inc": 0.415,
+#            "CR": 0.20,
+#            "bkg": {
+#                2022: {"lj": 24.01, "sj": 14.59, "comb": 38.52},
+#                2023: {"lj": 43.68, "sj": 15.04, "comb": 61.36},
+#            },
+#            "bkg_err": {
+#                2022: {"lj": 2.90, "sj": 3.08, "comb": 3.98},
+#                2023: {"lj": 3.77, "sj": 2.60, "comb": 4.72},
+#            },
+#        },
+#        {
+#            "lj_depth": 0.95,
+#            "lj_inc": 0.97,
+#            "sj_depth": 0.95,
+#            "sj_inc": 0.97,
+#            "CR": 0.20,
+#            "bkg": {
+#                2022: {"lj": 1.00, "sj": 0.36, "comb": 1.38},
+#                2023: {"lj": 1.65,  "sj": 0.71, "comb": 2.33},
+#            },
+#            "bkg_err": {
+#                2022: {"lj": 0.08, "sj": 0.05, "comb": 0.1},
+#                2023: {"lj": 0.11, "sj": 0.11, "comb": 0.13},
+#            },
+#        },
  
     ]
     print("Reading in data tree... (this may take a few minutes)")
-    
-    # if using a partial dataset, how much to scale this up by
-    lumi_sf_23 = 1.0 
-    lumi_sf_22 = 1.0 
-    
-    lumi_2022 = 31.51
-    lumi_2023 =28.91
-    lumi_total = lumi_2022 + lumi_2023
-    
+   
     infile_data_23 = [
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv1_scores.root",
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv2_scores.root",
@@ -224,37 +297,6 @@ def main():
         nevents_bkg_ljdc_srpred_23, nevents_bkg_sjdc_srpred_23  = row["bkg"][2023]["lj"], row["bkg"][2023]["sj"]
         nevents_bkg_ljdc_srpred_22, nevents_bkg_sjdc_srpred_22  = row["bkg"][2022]["lj"], row["bkg"][2022]["sj"] 
      
-        # ----- Read in Signal ----- #
-     
-        print("Reading in signal tree...")
-     
-        infile_sig = ROOT.TFile.Open(infilepath) 
-        tree_sig  = infile_sig.Get("NoSel")
-     
-        tree_sig.SetBranchStatus("*", 0) 
-        tree_sig.SetBranchStatus("Pass_PreSel", 1) 
-        tree_sig.SetBranchStatus("jet*_DepthTagCand", 1) 
-        tree_sig.SetBranchStatus("jet*_InclTagCand", 1) 
-        tree_sig.SetBranchStatus("jet*_scores*", 1) 
-        tree_sig.SetBranchStatus("jet0_Pt", 1) 
-        tree_sig.SetBranchStatus("jet1_Pt", 1) 
-        tree_sig.SetBranchStatus("weight*", 1) 
-        tree_sig.SetBranchStatus("event_weight", 1) 
-        tree_sig.SetBranchStatus("LLP*", 1) 
-        tree_sig.SetBranchStatus("L1_prescale_weight", 1) 
-        tree_sig.SetBranchStatus("jet0_jet1_dPhi", 1)
-        tree_sig.SetBranchStatus("Flag_METFilters_2022_2023_PromptReco", 1)
-        tree_sig.SetBranchStatus("Pass_HLTDisplacedJet", 1) 
-        
-        train_frac = 0.2
-        lj_train_cut = "(int(jet0_Pt * 1000) % 10) >= 8"
-        sj_train_cut = "(int(jet1_Pt * 1000) % 10) >= 8"
-     
-        deltaPhi_cut = "(abs(jet0_jet1_dPhi) > 0.2)"
-     
-     #   tree_sig_skim = tree_sig.CopyTree(f"Pass_PreSel == 1 && {lj_train_cut} && {sj_train_cut}")
-        tree_sig_skim = tree_sig
-     
         # ----- Loop over Signal Lifetimes ----- #
         print( "Getting Event Counts...")
 
@@ -262,59 +304,54 @@ def main():
 
             print( "\nCTau Target:", ctau_target )
 
-            # Lifetime Reweight
- 
-            reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
-            reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
-            reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
- 
-            hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target, "", 1, 0, 1)
-            hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target, "", 1, 0, 1)
- 
-            print("tree entries:", tree_sig.GetEntries())
-            print("reweight =", reweight)
+            nominal = get_signal_yield(args.input, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc)
 
-            tree_sig_skim.Draw(
-               "0.5 >> hist_sig_ljdc_"+ctau_target,
-               " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3} && {4})".format(
-                   reweight, lj_train_cut, lj_depth, lj_inc, deltaPhi_cut
-               )
-            )
+            nevents_sig_ljdc_23.append( nominal["SIGLJDC_23"] / SF_temp )
+            nevents_sig_sjdc_23.append( nominal["SIGSJDC_23"] / SF_temp )
+            nevents_sig_ljdc_22.append( nominal["SIGLJDC_22"] / SF_temp )
+            nevents_sig_sjdc_22.append( nominal["SIGSJDC_22"] / SF_temp )
 
-            tree_sig_skim.Draw(
-               "0.5 >> hist_sig_sjdc_"+ctau_target,
-               " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3} && {4})".format(
-                   reweight, sj_train_cut, sj_depth, sj_inc, deltaPhi_cut
-               )
-            )
+            jer_up = get_signal_yield(args.input_jer_up, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, "jer_up")
+            jer_down = get_signal_yield(args.input_jer_down, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc,"jer_down")
 
-            #combined 2022+2023
-            nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / train_frac # 100 to convert from minituple % --> net fraction 
-            nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. /train_frac # 100 to convert from minituple % --> net fraction
+            jer = {}
+            for key in nominal:
+                nom = nominal[key]
+                up = jer_up[key]
+                down = jer_down[key]
 
-            nevents_sig_ljdc_temp_22 = nevents_sig_ljdc_temp * lumi_2022 / lumi_total
-            nevents_sig_ljdc_temp_23 = nevents_sig_ljdc_temp * lumi_2023 / lumi_total
-            nevents_sig_sjdc_temp_22 = nevents_sig_sjdc_temp * lumi_2022 / lumi_total
-            nevents_sig_sjdc_temp_23 = nevents_sig_sjdc_temp * lumi_2023 / lumi_total
+                if nom <= 0:
+                    val = 1.0
+                elif nom < 1e-3: #guard against very small yields
+                    if debug: print( "guarding against small yield:", nom )
+                    val = 1.0
+                else:
+                    val = max(up/nom, nom/down if down > 0 else 1.0)
+                if val > 2.0: print( "WARNING LARGE JER:", val )
 
-            nevents_sig_ljdc_22.append( nevents_sig_ljdc_temp_22 / SF_temp )
-            nevents_sig_ljdc_23.append( nevents_sig_ljdc_temp_23 / SF_temp )
-            nevents_sig_sjdc_22.append( nevents_sig_sjdc_temp_22 / SF_temp )
-            nevents_sig_sjdc_23.append( nevents_sig_sjdc_temp_23 / SF_temp )
+                jer[key] = val
+
+                print("nom, up, down:", nominal[key], jer_up[key], jer_down[key])
 
             # Replace test in template datacard
             output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
 
-            print("Nevents LJDC 22:", nevents_sig_ljdc_22)
-            print("Nevents LJDC 23:", nevents_sig_ljdc_23)
-            print("Nevents SJDC 22:", nevents_sig_sjdc_22)
-            print("Nevents SJDC 23:", nevents_sig_sjdc_23)
+            print("Nevents LJDC 23:", nominal["SIGLJDC_23"])
+            print("Nevents SJDC 23:", nominal["SIGSJDC_23"])
+            print("Nevents LJDC 22:", nominal["SIGLJDC_22"])
+            print("Nevents SJDC 22:", nominal["SIGSJDC_22"])
 
             replacements = {
-                "SIGLJDC_23": f"{nevents_sig_ljdc_temp_23:.6e}", 
-                "SIGSJDC_23": f"{nevents_sig_sjdc_temp_23:.6e}",
-                "SIGLJDC_22": f"{nevents_sig_ljdc_temp_22:.6e}", 
-                "SIGSJDC_22": f"{nevents_sig_sjdc_temp_22:.6e}",
+                "SIGLJDC_23": f"{nominal['SIGLJDC_23']:.6e}", 
+                "SIGSJDC_23": f"{nominal['SIGSJDC_23']:.6e}",
+                "SIGLJDC_22": f"{nominal['SIGLJDC_22']:.6e}", 
+                "SIGSJDC_22": f"{nominal['SIGSJDC_22']:.6e}",
+
+                "JERLJDC_23": f"{jer['SIGLJDC_23']:.6e}",
+                "JERSJDC_23": f"{jer['SIGSJDC_23']:.6e}",
+                "JERLJDC_22": f"{jer['SIGLJDC_22']:.6e}",
+                "JERSJDC_22": f"{jer['SIGSJDC_22']:.6e}",
+
                 "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:.6e}", 
                 "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:.6e}",
                 "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:.6e}", 
@@ -328,9 +365,6 @@ def main():
                     fout.write(pattern.sub(lambda m: replacements[m.group(0)], line))
 
             output = subprocess.check_output("combine -M AsymptoticLimits {}".format(output_file), shell=True, text=True)
-
-#            if os.path.exists(output_file):
-#                os.remove(output_file)
 
             # remove combine ROOT byproducts
             for f in glob.glob("higgsCombine*.root"):
@@ -396,11 +430,10 @@ def main():
         print( "--------------------------------------" )
         print( "CTaus: ", ctaus )
         print( "Limits:", limits_expected["50.0"] )
-        print( "LJDC 23:  ", nevents_sig_ljdc_temp_23 )
-        print( "SJDC 23:  ", nevents_sig_sjdc_temp_23 )
-        print( "LJDC 22:  ", nevents_sig_ljdc_temp_22 )
-        print( "SJDC 22:  ", nevents_sig_sjdc_temp_22 )
-    
+        print( "LJDC 23:  ", nevents_sig_ljdc_23 )
+        print( "SJDC 23:  ", nevents_sig_sjdc_23 )
+        print( "LJDC 22:  ", nevents_sig_ljdc_22 )
+        print( "SJDC 22:  ", nevents_sig_sjdc_22 )
     
         print( "--------------------------------------" )
         print( "Json file written to:", outfile_path )

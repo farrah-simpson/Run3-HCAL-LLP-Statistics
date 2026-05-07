@@ -9,7 +9,7 @@ observation             0          0           0         0
 bin                     LJDC_23        LJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        SJDC_22       SJDC_22
 process                 SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg
 process                 0              1              0              1              0              1             0              1
-rate                    3.226707e+00    0.95       4.503050e+00      0.24      3.516899e+00         2.04      4.908028e+00     0.53
+rate                    1.136834e+01    0.95       7.743428e+00      0.24      1.239074e+01         2.04      8.439827e+00     0.53
 ------------
 #Lumi signal only
 lumi_23_22  lnN              1.0017         -              1.0017         -              1.0138         -              1.0138              -
@@ -24,6 +24,6 @@ DNN     lnN              1.10           -              1.10              -      
 bkg_pileup lnN  - 0.856/1.135  - 0.690/1.269  - 0.708/1.172  - 0.760/1.309
 
 #JER systematics implemented using JER up/down minituples
-JER lnN                1.148897e+00        -           1.005550e+00        -           1.148897e+00      -       1.005550e+00      -
+JER lnN                9.968449e-01        -           9.352387e-01        -           9.968449e-01      -       9.352387e-01      -
 JER_uncert_PUPPIvsCHS lnN   1.10             -            1.10             -             1.10          -          1.10         -
 * autoMCStats 0

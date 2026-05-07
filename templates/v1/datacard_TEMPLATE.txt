@@ -1,3 +1,4 @@
+does this look okay
 imax 4  number of channels
 jmax 1  number of backgrounds
 kmax *  number of nuisance parameters (sources of systematical uncertainties)
@@ -17,8 +18,12 @@ lumi_23  lnN              1.0127         -           1.0127         -           
 # Trigger efficiency signal only flat rate
 trigEff lnN              1.10           -              1.10              -              1.10             -              1.10              -
 
+#DNN systematic
+DNN     lnN              1.10           -              1.10              -              1.10             -              1.10              -
 # Background pileup-dependence background only AN table 9
-bkg_pileup lnN           -              1.10           -              1.13           -              1.13           -            1.11
+bkg_pileup lnN  - 0.856/1.135  - 0.690/1.269  - 0.708/1.172  - 0.760/1.309
 
+#JER systematics implemented using JER up/down minituples
+JER lnN                JERLJDC_23        -           JERSJDC_23        -           JERLJDC_22      -       JERSJDC_22      -
+JER_uncert_PUPPIvsCHS lnN   1.10             -            1.10             -             1.10          -          1.10         -
 * autoMCStats 0
-

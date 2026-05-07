@@ -328,7 +328,9 @@ def main():
                 else:
                     val = max(up/nom, nom/down if down > 0 else 1.0)
                 if val > 2.0: print( "WARNING LARGE JER:", val )
-
+                MAX_jer = 2.0  # 100% uncertainty cap
+                val = min(val, MAX_jer) # For ctau = 100,200 HToSSTo4B_125_50
+                
                 jer[key] = val
 
                 print("nom, up, down:", nominal[key], jer_up[key], jer_down[key])

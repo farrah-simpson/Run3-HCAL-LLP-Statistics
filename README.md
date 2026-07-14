@@ -55,18 +55,33 @@ python3 plot_limits.py <input_json_file> # makes typical brazil plot
 # More for debugging: compare limits across multiple file configurations or signal mass points:
 python3 plot_limits.py <output_filetag> <input_json_1> .... <input_json_N> # compares limits, signal yields, background yields
 ```
+## How to Run Blinded Impact Plots
+```
+text2workspace.py datacard_HToSSTo4B_125_50_inc_0.845_0.375_depth_0.965_0.975__10000.txt -o workspace_125_50_10000.root 
 
+combineTool.py -M Impacts   -d workspace_125_50_10000.root -m 125   --expectSignal 1  --doInitialFit  -t -1  --rMin -100 --cminDefaultMinimizerStrategy 0
+
+combineTool.py -M Impacts   -d workspace_125_50_10000.root   -m 125   -t -1  --doFits --expectSignal 1  --rMin -100 --cminDefaultMinimizerStrategy 0
+
+combineTool.py -M Impacts   -d workspace_125_50_10000.root   -m 125   -o impacts_blinded_expSig1_125_50_10000.json
+
+plotImpacts.py   -i impacts_blinded_expSig1_125_50_10000.json   -o impacts_blinded_expSig1_125_50_10000
+
+combineTool.py -M Impacts   -d workspace_125_50_10000.root -m 125  --doInitialFit  -t -1  --rMin -0.05 --cminDefaultMinimizerStrategy 0
+
+combineTool.py -M Impacts   -d workspace_125_50_10000.root   -m 125   -t -1  --doFits --rMin -0.05 --cminDefaultMinimizerStrategy 0
+
+combineTool.py -M Impacts   -d workspace_125_50_10000.root   -m 125   -o impacts_blinded_expSig0_125_50_10000.json
+
+plotImpacts.py   -i impacts_blinded_expSig0_125_50_10000.json   -o impacts_blinded_expSig0_125_50_10000
+
+```
 ## To do
 
 Improvements needed:
-* More accurate background estimation (from Gillian)
 * Application of correct SFs
-* Integration of systematics beyond flat systematics in datacard
-* More "finalized" SR cuts
-* Beam halo rejection and VR outlier cut on btag score
+* Update systematics with final version (DNN, trigger)
 
 Additional functionalities needed:
 * Signal injection tests
 * Asimov tests
-* Pulls
-

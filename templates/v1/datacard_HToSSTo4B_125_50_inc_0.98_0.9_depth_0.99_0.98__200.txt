@@ -9,7 +9,7 @@ observation             0          0           0         0
 bin                     LJDC_23        LJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        SJDC_22       SJDC_22
 process                 SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg
 process                 0              1              0              1              0              1             0              1
-rate                    SIGLJDC_23    0.95       SIGSJDC_23      0.24      SIGLJDC_22         2.04      SIGSJDC_22     0.53
+rate                    2.178492e+00    0.95       3.529354e+00      0.24      2.374413e+00         2.04      3.846764e+00     0.53
 ------------
 #Lumi signal only
 lumi_23_22  lnN              1.0017         -              1.0017         -              1.0138         -              1.0138              -
@@ -24,9 +24,9 @@ DNN     lnN              1.10           -              1.10              -      
 bkg_pileup lnN  - 0.856/1.135  - 0.690/1.269  - 0.708/1.172  - 0.760/1.309
 
 #JER systematics implemented using JER up/down minituples
-JER lnN                JERLJDC_23        -           JERSJDC_23        -           JERLJDC_22      -       JERSJDC_22      -
+JER lnN                1.480793e+00        -           7.766027e-01        -           1.480793e+00      -       7.766027e-01      -
 #PU systematics implemented using JER up/down minituples
-PU lnN                PULJDC_23        -           PUSJDC_23        -           PULJDC_22      -       PUSJDC_22      -
+PU lnN                8.767669e-01        -           8.420563e-01        -           8.767669e-01      -       8.420563e-01      -
 
 JER_uncert_PUPPIvsCHS lnN   1.10             -            1.10             -             1.10          -          1.10         -
 * autoMCStats 0

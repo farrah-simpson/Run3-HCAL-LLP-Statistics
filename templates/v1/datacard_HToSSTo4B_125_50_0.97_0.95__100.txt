@@ -1,4 +1,3 @@
-does this look okay
 imax 4  number of channels
 jmax 1  number of backgrounds
 kmax *  number of nuisance parameters (sources of systematical uncertainties)
@@ -9,7 +8,7 @@ observation             0          0           0         0
 bin                     LJDC_23        LJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        SJDC_22       SJDC_22
 process                 SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg
 process                 0              1              0              1              0              1             0              1
-rate                    SIGLJDC_23    0.95       SIGSJDC_23      0.24      SIGLJDC_22         2.04      SIGSJDC_22     0.53
+rate                    1.485333e-03    0.95       1.517754e-05      0.24      1.618915e-03         2.04      1.654252e-05     0.53
 ------------
 #Lumi signal only
 lumi_23_22  lnN              1.0017         -              1.0017         -              1.0138         -              1.0138              -
@@ -18,15 +17,8 @@ lumi_23  lnN              1.0127         -           1.0127         -           
 # Trigger efficiency signal only flat rate
 trigEff lnN              1.10           -              1.10              -              1.10             -              1.10              -
 
-#DNN systematic
-DNN     lnN              1.10           -              1.10              -              1.10             -              1.10              -
 # Background pileup-dependence background only AN table 9
-bkg_pileup lnN  - 0.856/1.135  - 0.690/1.269  - 0.708/1.172  - 0.760/1.309
+bkg_pileup lnN           -              1.10           -              1.13           -              1.13           -            1.11
 
-#JER systematics implemented using JER up/down minituples
-JER lnN                JERLJDC_23        -           JERSJDC_23        -           JERLJDC_22      -       JERSJDC_22      -
-#PU systematics implemented using JER up/down minituples
-PU lnN                PULJDC_23        -           PUSJDC_23        -           PULJDC_22      -       PUSJDC_22      -
-
-JER_uncert_PUPPIvsCHS lnN   1.10             -            1.10             -             1.10          -          1.10         -
 * autoMCStats 0
+

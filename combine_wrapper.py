@@ -74,7 +74,7 @@ def make_chain(tree_name, file_list):
         chain.Add(f)
     return chain
 
-def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, sys="nominal"):
+def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, pileupweight_="nominal", sys="nominal"):
 
     # if using a partial dataset, how much to scale this up by
     lumi_sf_23 = 1.0 
@@ -102,6 +102,9 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     tree_sig.SetBranchStatus("event_weight", 1) 
     tree_sig.SetBranchStatus("LLP*", 1) 
     tree_sig.SetBranchStatus("L1_prescale_weight", 1) 
+    if pileupweight_ == "nominal": tree_sig.SetBranchStatus("puWeight", 1) 
+    elif pileupweight_ == "pileupWeightUp": tree_sig.SetBranchStatus("puWeightUp", 1) 
+    elif pileupweight_ == "pileupWeightDown": tree_sig.SetBranchStatus("puWeightDown", 1)
     tree_sig.SetBranchStatus("jet0_jet1_dPhi", 1)
     tree_sig.SetBranchStatus("Flag_METFilters_2022_2023_PromptReco", 1)
     tree_sig.SetBranchStatus("Pass_HLTDisplacedJet", 1) 
@@ -116,7 +119,11 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
 
     reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
     reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
-    reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    if pileupweight_ == "nominal": reweight = "( puWeight * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+
 
     hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target+sys, "", 1, 0, 1)
     hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target+sys, "", 1, 0, 1)
@@ -168,6 +175,19 @@ def main():
 
     bkg_table = [
         {
+            "lj_depth": 0.99,
+            "lj_inc": 0.98,
+            "sj_depth": 0.98,
+            "sj_inc": 0.9,
+            "bkg": {
+                2022: {"lj": 0.02, "sj": 0.09},
+                2023: {"lj": 0.11, "sj": 0.38},
+            },
+            "bkg_err": {
+                2022: {"lj": 0.01, "sj": 0.03},
+                2023: {"lj": 0.02, "sj": 0.22},
+            },
+        },
 #            "lj_depth": 0.965,
 #            "lj_inc": 0.695,
 #            "sj_depth": 0.965,
@@ -183,20 +203,20 @@ def main():
 #            },
 #        },
 #        {
-            "lj_depth": 0.965,
-            "lj_inc": 0.845,
-            "sj_depth": 0.975,
-            "sj_inc": 0.375,
-            "CR": 0.20,
-            "bkg": {
-                2022: {"lj": 5.27, "sj": 16.01, "comb": 25.23},
-                2023: {"lj": 9.79, "sj": 16.56, "comb": 38.38},
-            },
-            "bkg_err": {
-                2022: {"lj": 0.54, "sj": 3.38, "comb": 2.25},
-                2023: {"lj": 0.72, "sj": 2.86, "comb": 2.51},
-            },
-        },
+#            "lj_depth": 0.965,
+#            "lj_inc": 0.845,
+#            "sj_depth": 0.975,
+#            "sj_inc": 0.375,
+#            "CR": 0.20,
+#            "bkg": {
+#                2022: {"lj": 5.27, "sj": 16.01, "comb": 25.23},
+#                2023: {"lj": 9.79, "sj": 16.56, "comb": 38.38},
+#            },
+#            "bkg_err": {
+#                2022: {"lj": 0.54, "sj": 3.38, "comb": 2.25},
+#                2023: {"lj": 0.72, "sj": 2.86, "comb": 2.51},
+#            },
+#        },
 #        {
 #            "lj_depth": 0.975,
 #            "lj_inc": 0.415,
@@ -232,18 +252,18 @@ def main():
     print("Reading in data tree... (this may take a few minutes)")
    
     infile_data_23 = [
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv1_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv2_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv3_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Cv4_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Dv1_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2023Dv2_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv2_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv3_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv4_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Dv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Dv2_scores.root",
     ]
     infile_data_22 = [
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Dv1_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Ev1_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Fv1_scores.root",
-    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.1/minituple_data_2022Gv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2022Dv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2022Ev1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2022Fv1_scores.root",
+    "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2022Gv1_scores.root",
     ]
     
     tree_data_23 = make_chain("NoSel", infile_data_23) 
@@ -311,8 +331,8 @@ def main():
             nevents_sig_ljdc_22.append( nominal["SIGLJDC_22"] / SF_temp )
             nevents_sig_sjdc_22.append( nominal["SIGSJDC_22"] / SF_temp )
 
-            jer_up = get_signal_yield(args.input_jer_up, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, "jer_up")
-            jer_down = get_signal_yield(args.input_jer_down, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc,"jer_down")
+            jer_up = get_signal_yield(args.input_jer_up, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, "nominal", "jer_up")
+            jer_down = get_signal_yield(args.input_jer_down, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, "nominal", "jer_down")
 
             jer = {}
             for key in nominal:
@@ -335,6 +355,30 @@ def main():
 
                 print("nom, up, down:", nominal[key], jer_up[key], jer_down[key])
 
+            pu_up = get_signal_yield(args.input, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, "pileupWeightUp", "nominal")
+            pu_down = get_signal_yield(args.input, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, "pileupWeightDown", "nominal")
+
+            pu = {}
+            for pukey in nominal:
+                punom = nominal[pukey]
+                up = pu_up[pukey]
+                down = pu_down[pukey]
+
+                if nom <= 0:
+                    val = 1.0
+                elif nom < 1e-3: #guard against very small yields
+                    if debug: print( "guarding against small yield:", nom )
+                    val = 1.0
+                else:
+                    val = max(up/nom, nom/down if down > 0 else 1.0)
+                if val > 2.0: print( "WARNING LARGE PU:", val )
+                MAX_PU = 2.0  # 100% uncertainty cap
+                val = min(val, MAX_PU) # For ctau = 100,200 HToSSTo4B_125_50
+                
+                pu[pukey] = val
+
+                print("nom, pileup up, pileup down:", nominal[pukey], pu_up[pukey], pu_down[pukey])
+
             # Replace test in template datacard
             output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
 
@@ -353,6 +397,11 @@ def main():
                 "JERSJDC_23": f"{jer['SIGSJDC_23']:.6e}",
                 "JERLJDC_22": f"{jer['SIGLJDC_22']:.6e}",
                 "JERSJDC_22": f"{jer['SIGSJDC_22']:.6e}",
+
+                "PULJDC_23": f"{pu['SIGLJDC_23']:.6e}",
+                "PUSJDC_23": f"{pu['SIGSJDC_23']:.6e}",
+                "PULJDC_22": f"{pu['SIGLJDC_22']:.6e}",
+                "PUSJDC_22": f"{pu['SIGSJDC_22']:.6e}",
 
                 "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:.6e}", 
                 "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:.6e}",

@@ -102,9 +102,7 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     tree_sig.SetBranchStatus("event_weight", 1) 
     tree_sig.SetBranchStatus("LLP*", 1) 
     tree_sig.SetBranchStatus("L1_prescale_weight", 1) 
-    if pileupweight_ == "nominal": tree_sig.SetBranchStatus("puWeight", 1) 
-    elif pileupweight_ == "pileupWeightUp": tree_sig.SetBranchStatus("puWeightUp", 1) 
-    elif pileupweight_ == "pileupWeightDown": tree_sig.SetBranchStatus("puWeightDown", 1)
+    tree_sig.SetBranchStatus("puWeight*", 1) 
     tree_sig.SetBranchStatus("jet0_jet1_dPhi", 1)
     tree_sig.SetBranchStatus("Flag_METFilters_2022_2023_PromptReco", 1)
     tree_sig.SetBranchStatus("Pass_HLTDisplacedJet", 1) 
@@ -124,22 +122,30 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
-
-    hist_sig_ljdc = ROOT.TH1F("hist_sig_ljdc_"+ctau_target+sys, "", 1, 0, 1)
-    hist_sig_sjdc = ROOT.TH1F("hist_sig_sjdc_"+ctau_target+sys, "", 1, 0, 1)
+    hist_sig_ljdc = ROOT.TH1F(
+        f"hist_sig_ljdc_{ctau_target}_{sys}_{pileupweight_}",
+        "",
+        1,0,1
+    )
+    
+    hist_sig_sjdc = ROOT.TH1F(
+        f"hist_sig_sjdc_{ctau_target}_{sys}_{pileupweight_}",
+        "",
+        1,0,1
+    )
 
     print("tree entries:", tree_sig.GetEntries())
     print("reweight =", reweight)
 
     tree_sig.Draw(
-       "0.5 >> hist_sig_ljdc_"+ctau_target+sys,
+            "0.5 >> hist_sig_ljdc_"+ctau_target+"_"+sys+"_"+pileupweight_,
        " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3} && {4})".format(
            reweight, lj_train_cut, lj_depth, lj_inc, deltaPhi_cut
        )
     )
 
     tree_sig.Draw(
-       "0.5 >> hist_sig_sjdc_"+ctau_target+sys,
+       "0.5 >> hist_sig_sjdc_"+ctau_target+"_"+sys+"_"+pileupweight_,
        " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3} && {4})".format(
            reweight, sj_train_cut, sj_depth, sj_inc, deltaPhi_cut
        )

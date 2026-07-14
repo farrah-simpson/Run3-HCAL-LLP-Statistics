@@ -364,13 +364,13 @@ def main():
                 up = pu_up[pukey]
                 down = pu_down[pukey]
 
-                if nom <= 0:
+                if punom <= 0:
                     val = 1.0
-                elif nom < 1e-3: #guard against very small yields
-                    if debug: print( "guarding against small yield:", nom )
+                elif punom < 1e-3: #guard against very small yields
+                    if debug: print( "guarding against small yield:", punom )
                     val = 1.0
                 else:
-                    val = max(up/nom, nom/down if down > 0 else 1.0)
+                    val = max(up/punom, punom/down if down > 0 else 1.0)
                 if val > 2.0: print( "WARNING LARGE PU:", val )
                 MAX_PU = 2.0  # 100% uncertainty cap
                 val = min(val, MAX_PU) # For ctau = 100,200 HToSSTo4B_125_50

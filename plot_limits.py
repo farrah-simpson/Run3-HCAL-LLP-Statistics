@@ -21,8 +21,10 @@ plt.rcParams.update({
     "ytick.minor.visible": True
 })
 
+use_xsec = False #True
+
 # -------------------------------------------------------------------------------------------------
-def get_data(infile):
+def get_data(infile, mass = 125):
 
 	data_in = {}
 
@@ -33,12 +35,19 @@ def get_data(infile):
 
 	data_out = {}
 
+	xsec_GGF_fb = {
+            125: 52200.0,  # LHCHWG 13.6 TeV SM ggF, mH=125 GeV
+	}
+
+	if use_xsec: xsec_theory = xsec_GGF_fb[mass] 
+	else: xsec_theory = 1.0
+
 	data_out["ctaus"] = np.array( data_in["ctaus"] )[mask] * 1.0e-3
-	data_out["exp_median"] = np.array( data_in["limits_exp"]["50.0"] )[mask] #* 0.01
-	data_out["exp_1s_low"] = np.array( data_in["limits_exp"]["16.0"] )[mask] #* 0.01
-	data_out["exp_1s_high"] = np.array( data_in["limits_exp"]["84.0"] )[mask] #* 0.01
-	data_out["exp_2s_low"] = np.array( data_in["limits_exp"][" 2.5"] )[mask] #* 0.01
-	data_out["exp_2s_high"] = np.array( data_in["limits_exp"]["97.5"] )[mask] #* 0.01
+	data_out["exp_median"] = np.array( data_in["limits_exp"]["50.0"] )[mask] * xsec_theory
+	data_out["exp_1s_low"] = np.array( data_in["limits_exp"]["16.0"] )[mask] * xsec_theory
+	data_out["exp_1s_high"] = np.array( data_in["limits_exp"]["84.0"] )[mask]* xsec_theory
+	data_out["exp_2s_low"] = np.array( data_in["limits_exp"][" 2.5"] )[mask] * xsec_theory
+	data_out["exp_2s_high"] = np.array( data_in["limits_exp"]["97.5"] )[mask] * xsec_theory
 
 	data_out["nevents_sig_ljdc_23"] = np.array( data_in["nevents_sig_ljdc_23"] )[mask] #* 0.01
 	data_out["nevents_sig_sjdc_23"] = np.array( data_in["nevents_sig_sjdc_23"] )[mask] #* 0.01
@@ -87,13 +96,15 @@ def plot_single_limit(infile):
 	ax.xaxis.set_label_coords(1.0, ax.xaxis.get_label().get_position()[1]-0.065)
 
 
-	ax.set_ylabel(r"95% CL upper limit on BR(H$\to$SS)", fontsize=13)
+	if use_xsec: ax.set_ylabel(r"95% CL upper limit on $\sigma \times BR(H\to SS)$ [fb]", fontsize=13)
+	else: ax.set_ylabel(r"95% CL upper limit on $BR(H\to SS)$", fontsize=13)
 	ax.yaxis.label.set_verticalalignment('top')
-	ax.yaxis.set_label_coords(ax.yaxis.get_label().get_position()[0]-0.12, 0.66)
+	ax.yaxis.set_label_coords(ax.yaxis.get_label().get_position()[0]-0.12, 0.55)
 
 	ax.set_yscale("log")
 	ax.set_xscale("log")
-	ax.set_ylim(0.0005, 1.0)
+	if use_xsec: ax.set_ylim(0.05, 100000.0)
+	else: ax.set_ylim(0.00005, 1.0)
 	ax.grid(True, which="both", ls="--", lw=0.5, alpha=0.6)
 
 	# --- CMS label and luminosity text ---
@@ -112,7 +123,9 @@ def plot_single_limit(infile):
 	plt.tight_layout()
 	plt.subplots_adjust(top=0.92) 
 
-	outfile = os.path.join("plots", infile.replace(".json", ".pdf").split("/")[-1])
+	if use_xsec: outfile = os.path.join("plots", infile.replace(".json", "_xsec.pdf").split("/")[-1])
+	else:  outfile = os.path.join("plots", infile.replace(".json", ".pdf").split("/")[-1])
+
 	plt.savefig(outfile)
 
 # -------------------------------------------------------------------------------------------------
@@ -391,38 +404,39 @@ def plot_multi_limit_debug(outfiletag, infiles):
 # -------------------------------------------------------------------------------------------------
 def main():
 
-    #single limit plot
-    #	if len(sys.argv) == 2: 
-    #		infile = sys.argv[1]
-    #		plot_single_limit(infile)
-    #		return
-    #	else: 
-    #		filetag = sys.argv[1]
-    #		infiles = sys.argv[2:]
-    #		plot_multi_limit_debug(filetag, infiles)
+#single limit plot
+    	if len(sys.argv) == 2: 
+    		infile = sys.argv[1]
+    		plot_single_limit(infile)
+    		return
+    	else: 
+    		filetag = sys.argv[1]
+    		infiles = sys.argv[2:]
+    		plot_multi_limit_debug(filetag, infiles)
     
-    #limit ratio plot
+#limit ratio plot
     #    plot_ratio("output/HToSSTo4B_125_50_inc0.9_depth0.8.json","output/HToSSTo4B_125_50_inc0.9_depth0.8_statonly.json")
     
-    #limit comparison plot
+#limit comparison plot
 
-    filetag = "HToSSTo4B_125_50" 
-    
-    outdir = "output/"
-    labels = [
-    #    "LJDC 0.965/0.695, SJDC 0.965/0.315",
-        "LJDC 0.965/0.845, SJDC 0.975/0.375",
-        "LJDC 0.975/0.415, SJDC 0.975/0.415",
-    ]
-    
-    
-    infiles = [
-    #    os.path.join(outdir, "{0}_inc0.695_0.315_depth0.965_0.965.json".format(filetag)),
-        os.path.join(outdir, "{0}_inc0.845_0.375_depth0.965_0.975.json".format(filetag)),
-        os.path.join(outdir, "{0}_inc0.415_0.415_depth0.975_0.975.json".format(filetag)),
-    ]
-    
-    plot_limit_comparison(infiles, labels, outfile="plots/limit_comparison.pdf")
+#    filetag = "HToSSTo4B_125_50" 
+#    
+#    outdir = "output/"
+#    labels = [
+#        "LJDC 0.95/0.97, SJDC 0.95/0.97",
+#        "LJDC 0.965/0.845, SJDC 0.975/0.375",
+#        "LJDC 0.975/0.415, SJDC 0.975/0.415",
+#    ]
+#    
+#    
+#    infiles = [
+#    #    os.path.join(outdir, "{0}_inc0.695_0.315_depth0.965_0.965.json".format(filetag)),
+#        os.path.join(outdir, "{0}_inc0.97_0.97_depth0.95_0.95.json".format(filetag)),
+#        os.path.join(outdir, "{0}_inc0.845_0.375_depth0.965_0.975.json".format(filetag)),
+#        os.path.join(outdir, "{0}_inc0.415_0.415_depth0.975_0.975.json".format(filetag)),
+#    ]
+#    
+#    plot_limit_comparison(infiles, labels, outfile="plots/limit_comparison.pdf")
 
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':

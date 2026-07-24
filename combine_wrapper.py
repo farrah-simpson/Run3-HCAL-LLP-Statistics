@@ -121,6 +121,10 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     if pileupweight_ == "nominal": reweight = "( puWeight * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #if pileupweight_ == "nominal": reweight = "( puWeight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+
 
     hist_sig_ljdc = ROOT.TH1F(
         f"hist_sig_ljdc_{ctau_target}_{sys}_{pileupweight_}",

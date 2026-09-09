@@ -76,8 +76,8 @@ def make_chain(tree_name, file_list):
 
 def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, pileupweight_="nominal", sys="nominal"):
 
-    # if using a partial dataset, how much to scale this up by
-    lumi_sf_23 = 1.0 
+    # scale the signal based on the difference in signal efficiencies in pre and post BPix
+    lumi_sf_23 = 0.29 
     lumi_sf_22 = 1.0 
     
     lumi_2022 = 31.51
@@ -118,13 +118,21 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
     reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
     #reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+
+    #CHANGE HERE FOR VERSION
+
+    # final
     if pileupweight_ == "nominal": reweight = "( puWeight * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+
+    # no trigger
     #if pileupweight_ == "nominal": reweight = "( puWeight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     #elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
     #elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
+    # no pileup
+    #reweight = "( L1_prescale_weight * event_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
     hist_sig_ljdc = ROOT.TH1F(
         f"hist_sig_ljdc_{ctau_target}_{sys}_{pileupweight_}",
@@ -155,9 +163,8 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
        )
     )
 
-    #combined 2022+2023
-    nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / train_frac # 100 to convert from minituple % --> net fraction 
-    nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. /train_frac # 100 to convert from minituple % --> net fraction
+    nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / (train_frac * lumi_sf_23)# 100 to convert from minituple % --> net fraction 
+    nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. / (train_frac * lumi_sf_23)# 100 to convert from minituple % --> net fraction
 
     infile_sig.Close()
 
@@ -184,80 +191,43 @@ def main():
     output_dir        = args.output_dir
 
     bkg_table = [
+#        {
+#            #WP 1 full opt. 2023 postBPix cuts only used
+#            # lumi_sf_23 = 0.71 
+#            "lj_depth": 0.985,
+#            "lj_inc": 0.995,
+#            "sj_depth": 0.995,
+#            "sj_inc": 0.975,
+#            "bkg": {
+#                2022: {"lj": 4.37, "sj": 0.53},
+#                2023: {"lj": 7.33, "sj": 1.7},
+#            },
+#        },
         {
-            "lj_depth": 0.99,
-            "lj_inc": 0.98,
-            "sj_depth": 0.98,
-            "sj_inc": 0.9,
+            #WP 2 full opt. 2023 postBPix cuts only used
+            # lumi_sf_23 = 0.29
+            "lj_depth": 0.995,
+            "lj_inc": 0.995,
+            "sj_depth": 0.995,
+            "sj_inc": 0.985,
             "bkg": {
-                2022: {"lj": 0.02, "sj": 0.09},
-                2023: {"lj": 0.11, "sj": 0.38},
-            },
-            "bkg_err": {
-                2022: {"lj": 0.01, "sj": 0.03},
-                2023: {"lj": 0.02, "sj": 0.22},
+                2022: {"lj": 4.37, "sj": 0.53},
+                2023: {"lj": 7.33, "sj": 1.7},
             },
         },
-#            "lj_depth": 0.965,
-#            "lj_inc": 0.695,
-#            "sj_depth": 0.965,
-#            "sj_inc": 0.315,
-#            "CR": 0.20,
-#            "bkg": {
-#                2022: {"lj": 13.56, "sj": 21.45, "comb": 37.15},
-#                2023: {"lj": 0.58,  "sj": 16.56, "comb": 97.65},
-#            },
-#            "bkg_err": {
-#                2022: {"lj": 1.40, "sj": 4.13, "comb": 3.27},
-#                2023: {"lj": 0.03, "sj": 2.86, "comb": 3.50},
-#            },
-#        },
 #        {
-#            "lj_depth": 0.965,
-#            "lj_inc": 0.845,
-#            "sj_depth": 0.975,
-#            "sj_inc": 0.375,
-#            "CR": 0.20,
+#            #WP 3 sig. eff. matched 2023 postBPix cuts only used
+#            # lumi_sf_23 = 1.0
+#            "lj_depth": 0.995,
+#            "lj_inc": 0.995,
+#            "sj_depth": 0.995,
+#            "sj_inc": 0.995,
 #            "bkg": {
-#                2022: {"lj": 5.27, "sj": 16.01, "comb": 25.23},
-#                2023: {"lj": 9.79, "sj": 16.56, "comb": 38.38},
-#            },
-#            "bkg_err": {
-#                2022: {"lj": 0.54, "sj": 3.38, "comb": 2.25},
-#                2023: {"lj": 0.72, "sj": 2.86, "comb": 2.51},
+#                2022: {"lj": 4.37, "sj": 0.53},
+#                2023: {"lj": 7.33, "sj": 1.7},
 #            },
 #        },
-#        {
-#            "lj_depth": 0.975,
-#            "lj_inc": 0.415,
-#            "sj_depth": 0.975,
-#            "sj_inc": 0.415,
-#            "CR": 0.20,
-#            "bkg": {
-#                2022: {"lj": 24.01, "sj": 14.59, "comb": 38.52},
-#                2023: {"lj": 43.68, "sj": 15.04, "comb": 61.36},
-#            },
-#            "bkg_err": {
-#                2022: {"lj": 2.90, "sj": 3.08, "comb": 3.98},
-#                2023: {"lj": 3.77, "sj": 2.60, "comb": 4.72},
-#            },
-#        },
-#        {
-#            "lj_depth": 0.95,
-#            "lj_inc": 0.97,
-#            "sj_depth": 0.95,
-#            "sj_inc": 0.97,
-#            "CR": 0.20,
-#            "bkg": {
-#                2022: {"lj": 1.00, "sj": 0.36, "comb": 1.38},
-#                2023: {"lj": 1.65,  "sj": 0.71, "comb": 2.33},
-#            },
-#            "bkg_err": {
-#                2022: {"lj": 0.08, "sj": 0.05, "comb": 0.1},
-#                2023: {"lj": 0.11, "sj": 0.11, "comb": 0.13},
-#            },
-#        },
- 
+   
     ]
     print("Reading in data tree... (this may take a few minutes)")
    
@@ -458,14 +428,13 @@ def main():
                 print("WARNING: could not extract all limit information for:", ctau_target, "(more info available in debug mode)" )
                 if debug: print( output )
 
-            outfile_temp.Close()
-            if os.path.exists(tmp_root):
-                os.remove(tmp_root)
-            try:
-                os.rmdir(tmpdir)
-            except OSError:
-                pass
-
+        outfile_temp.Close()
+        if os.path.exists(tmp_root):
+            os.remove(tmp_root)
+        try:
+            os.rmdir(tmpdir)
+        except OSError:
+            pass
 
         data = {}
         data["ctaus"] = ctaus

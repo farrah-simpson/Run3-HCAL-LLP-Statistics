@@ -77,7 +77,9 @@ def make_chain(tree_name, file_list):
 def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, pileupweight_="nominal", sys="nominal"):
 
     # scale the signal based on the difference in signal efficiencies in pre and post BPix
-    lumi_sf_23 = 0.29 
+    sigeff_sf_23 = 0.71  
+
+    lumi_sf_23 = 1.0  
     lumi_sf_22 = 1.0 
     
     lumi_2022 = 31.51
@@ -163,8 +165,8 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
        )
     )
 
-    nevents_sig_ljdc_temp = hist_sig_ljdc.Integral() * SF_temp * 100. / (train_frac * lumi_sf_23)# 100 to convert from minituple % --> net fraction 
-    nevents_sig_sjdc_temp = hist_sig_sjdc.Integral() * SF_temp * 100. / (train_frac * lumi_sf_23)# 100 to convert from minituple % --> net fraction
+    nevents_sig_ljdc_temp = sigeff_sf_23 * hist_sig_ljdc.Integral() * SF_temp * 100. / (train_frac * lumi_sf_23)# 100 to convert from minituple % --> net fraction 
+    nevents_sig_sjdc_temp = sigeff_sf_23 * hist_sig_sjdc.Integral() * SF_temp * 100. / (train_frac * lumi_sf_23)# 100 to convert from minituple % --> net fraction
 
     infile_sig.Close()
 
@@ -191,40 +193,40 @@ def main():
     output_dir        = args.output_dir
 
     bkg_table = [
-#        {
-#            #WP 1 full opt. 2023 postBPix cuts only used
-#            # lumi_sf_23 = 0.71 
-#            "lj_depth": 0.985,
-#            "lj_inc": 0.995,
-#            "sj_depth": 0.995,
-#            "sj_inc": 0.975,
-#            "bkg": {
-#                2022: {"lj": 4.37, "sj": 0.53},
-#                2023: {"lj": 7.33, "sj": 1.7},
-#            },
-#        },
         {
-            #WP 2 full opt. 2023 postBPix cuts only used
-            # lumi_sf_23 = 0.29
-            "lj_depth": 0.995,
+            #WP 1 full opt. 2023 postBPix cuts only used
+            # sigeff_sf_23 = 0.71 
+            "lj_depth": 0.985,
             "lj_inc": 0.995,
             "sj_depth": 0.995,
-            "sj_inc": 0.985,
+            "sj_inc": 0.975,
             "bkg": {
                 2022: {"lj": 4.37, "sj": 0.53},
                 2023: {"lj": 7.33, "sj": 1.7},
             },
         },
 #        {
+#            #WP 2 full opt. 2023 postBPix cuts only used
+#            # sigeff_sf_23 = 0.29
+#            "lj_depth": 0.995,
+#            "lj_inc": 0.995,
+#            "sj_depth": 0.995,
+#            "sj_inc": 0.985,
+#            "bkg": {
+#                2022: {"lj": 0.55, "sj": 0.53},
+#                2023: {"lj": 1.33, "sj": 1.14},
+#            },
+#        },
+#        {
 #            #WP 3 sig. eff. matched 2023 postBPix cuts only used
-#            # lumi_sf_23 = 1.0
+#            # sigeff_sf_23 = 1.0
 #            "lj_depth": 0.995,
 #            "lj_inc": 0.995,
 #            "sj_depth": 0.995,
 #            "sj_inc": 0.995,
 #            "bkg": {
-#                2022: {"lj": 4.37, "sj": 0.53},
-#                2023: {"lj": 7.33, "sj": 1.7},
+#                2022: {"lj": 6.23, "sj": 3.24},
+#                2023: {"lj": 8.16, "sj": 3.77},
 #            },
 #        },
    

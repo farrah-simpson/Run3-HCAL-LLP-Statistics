@@ -126,14 +126,14 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     #CHANGE HERE FOR VERSION
 
     # final
-    #if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
-    #elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
-    #elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
     # no trigger
-    if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
-    elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
-    elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+    #elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
     # no pileup
     #reweight = "( HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)

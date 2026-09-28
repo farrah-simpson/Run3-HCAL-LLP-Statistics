@@ -1,0 +1,32 @@
+imax 4  number of channels
+jmax 1  number of backgrounds
+kmax *  number of nuisance parameters (sources of systematical uncertainties)
+------------
+bin                     LJDC_23    SJDC_23    LJDC_22    SJDC_22
+observation             0          0           0         0
+------------
+bin                     LJDC_23        LJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        SJDC_22       SJDC_22
+process                 SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg
+process                 0              1              0              1              0              1             0              1
+rate                    1.395185e-01    1.124000e+01       7.460004e-01    2.900000e+00      1.520660e-01         1.078000e+01      8.130914e-01     1.000000e-07
+------------
+#Lumi signal only
+lumi_23_22  lnN              1.0017         -              1.0017         -              1.0138         -              1.0138              -
+lumi_23  lnN              1.0127         -           1.0127         -               -              -              -              -
+
+# Trigger efficiency signal only flat rate
+trigEff lnN              1.707472e+00           -              1.002340e+00              -              1.707472e+00             -              1.002340e+00              -
+
+#DNN systematic
+DNN     lnN              1.10           -              1.10              -              1.10             -              1.10              -
+# Background pileup-dependence background only AN table 9
+bkg_pileup lnN  - 0.9376/1.0624  - 0.779/1.221  - 0.913/1.0807  - 0.999999/1.000001
+
+#JER systematics implemented using JER up/down minituples
+JER lnN                8.693919e-01        -           1.555438e+00        -           8.693919e-01      -       1.555438e+00      -
+
+#pile up systematics implemented using JER up/down minituples
+standard_pileup lnN                1.375836e+00        -           8.397323e-01        -           1.375836e+00      -       8.397323e-01      -
+
+JER_uncert_PUPPIvsCHS lnN   1.10             -            1.10             -             1.10          -          1.10         -
+* autoMCStats 0

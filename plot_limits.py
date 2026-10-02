@@ -21,7 +21,7 @@ plt.rcParams.update({
     "ytick.minor.visible": True
 })
 
-use_xsec = False #True
+use_xsec = True
 
 # -------------------------------------------------------------------------------------------------
 def get_data(infile, mass = 125):
@@ -244,7 +244,9 @@ def plot_ratio(infile1, infile2):
 	plt.subplots_adjust(top=0.92) 
 
 	outfile = os.path.join("plots", infile1.replace(".json", "_ratio.pdf").split("/")[-1])
+
 	plt.savefig(outfile)
+	plt.savefig(os.path.join("plots", infile1.replace(".json", "_ratio.png").split("/")[-1]))
 
 
 def plot_multi_limit(infiles):

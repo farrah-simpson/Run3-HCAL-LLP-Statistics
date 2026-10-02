@@ -74,7 +74,7 @@ def make_chain(tree_name, file_list):
         chain.Add(f)
     return chain
 
-def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, pileupweight_="nominal", sys="nominal",trig_cut="1"):
+def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, pileupweight_="nominal", sys="nominal",trig_cut="1", require_hlt_decision=True):
 
     # scale the signal based on the difference in signal efficiencies in pre and post BPix
     sigeff_sf_23 = 0.71 
@@ -122,8 +122,11 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
 
     reweight_llp0 = "pow ( {0} / {1}, 1 ) * exp( -LLP0_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
     reweight_llp1 = "pow ( {0} / {1}, 1 ) * exp( -LLP1_DecayCtau * 10. * ( 1.0/{2} - 1.0/{3} ) )".format(ctau_sample, ctau_target, ctau_target, ctau_sample)
-
-    #CHANGE HERE FOR VERSION
+    
+    # testing
+#    if pileupweight_ == "nominal": reweight = "( puWeight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+#    elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+#    elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
     # final
     if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
@@ -131,9 +134,9 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
     # no trigger
-    #if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
-    #elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
-    #elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+#    if pileupweight_ == "nominal": reweight = "( puWeight * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+#    elif pileupweight_ == "pileupWeightUp": reweight = "( puWeightUp * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
+#    elif pileupweight_ == "pileupWeightDown": reweight = "( puWeightDown * HLT_prescale_weight * L1_prescale_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
 
     # no pileup
     #reweight = "( HLT_prescale_weight * L1_prescale_weight * event_HLT_HT_weight * weight * {0} * {1})".format(reweight_llp0, reweight_llp1)
@@ -153,17 +156,18 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
     print("tree entries:", tree_sig.GetEntries())
     print("reweight =", reweight)
 
+    hlt_pass =  "Pass_HLTDisplacedJet == 1 &&" if require_hlt_decision else ""
     tree_sig.Draw(
         "0.5 >> hist_sig_ljdc_"+ctau_target+"_"+sys+"_"+pileupweight_,
-        " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3} && {4} && {5})".format(
-       reweight, lj_train_cut, lj_depth, lj_inc, deltaPhi_cut, trig_cut
+        " ({0}) * ( {6} Pass_PreSel == 1 && {1} && jet0_DepthTagCand == 1 && jet1_InclTagCand == 1 && jet0_scores_depth_LLPanywhere > {2} && jet1_scores_inc_train80 > {3} && {4} && {5})".format(
+       reweight, lj_train_cut, lj_depth, lj_inc, deltaPhi_cut, trig_cut, hlt_pass
        )
     )
 
     tree_sig.Draw(
         "0.5 >> hist_sig_sjdc_"+ctau_target+"_"+sys+"_"+pileupweight_,
-        " ({0}) * ( Pass_HLTDisplacedJet == 1 && Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3} && {4} && {5})".format(
-        reweight, sj_train_cut, sj_depth, sj_inc, deltaPhi_cut, trig_cut
+        " ({0}) * ( {6} Pass_PreSel == 1 && {1} && jet1_DepthTagCand == 1 && jet0_InclTagCand == 1 && jet1_scores_depth_LLPanywhere > {2} && jet0_scores_inc_train80 > {3} && {4} && {5})".format(
+        reweight, sj_train_cut, sj_depth, sj_inc, deltaPhi_cut, trig_cut, hlt_pass
         )
     )
 
@@ -182,67 +186,91 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
 # ------------------------------------------------------------------------------
 def get_trigger_systematics(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, debug=False):
     MAX_TRIG = 2.0
-    MAX_LEG_PCT = 50.0
-                          
+    MAX_LEG_PCT = 50.0   # legs exceeding this are exclude from sys for now
+
     legs = [
-        ("L1",        "L1",    0, "pT"),
-        ("HLT1a_pT",  "HLT1a", 0, "pT"),
-        ("HLT1a_PTrk","HLT1a", 1, "PTrk"),
-        ("HLT1b_pT",  "HLT1b", 0, "pT"),
-        ("HLT1b_PTrk","HLT1b", 1, "PTrk"),
-        ("HLT2_pT",   "HLT2",  0, "pT"),
-        ("HLT2_PTrk", "HLT2",  1, "PTrk"),
-        ("HLT3a_pT",  "HLT3a", 0, "pT"),
-        ("HLT3a_PTrk","HLT3a", 1, "PTrk"),
-        ("HLT3a_DTrk","HLT3a", 2, "DTrk"),
-        ("HLT3b_pT",  "HLT3b", 0, "pT"),
-        ("HLT3b_PTrk","HLT3b", 1, "PTrk"),
-        ("HLT3b_DTrk","HLT3b", 2, "DTrk"),
+        ("L1_lead",    "L1",    0, "pT", "jet0"),
+        ("L1_sublead", "L1",    0, "pT", "jet1"),
+        ("HLT1a_pT",  "HLT1a", 0, "pT", None),
+        ("HLT1a_PTrk","HLT1a", 1, "PTrk", None),
+        ("HLT1b_pT",  "HLT1b", 0, "pT", None),
+        ("HLT1b_PTrk","HLT1b", 1, "PTrk", None),
+        ("HLT2_pT",   "HLT2",  0, "pT", None),
+        ("HLT2_PTrk", "HLT2",  1, "PTrk", None),
+        ("HLT3a_pT",  "HLT3a", 0, "pT", None),
+        ("HLT3a_PTrk","HLT3a", 1, "PTrk", None),
+        ("HLT3a_DTrk","HLT3a", 2, "DTrk", None),
+        ("HLT3b_pT",  "HLT3b", 0, "pT", None),
+        ("HLT3b_PTrk","HLT3b", 1, "PTrk", None),
+        ("HLT3b_DTrk","HLT3b", 2, "DTrk", None),
     ]
     regions = ["SIGLJDC_23", "SIGSJDC_23", "SIGLJDC_22", "SIGSJDC_22"]
 
-    per_filter_pct = {}          # raw, uncapped -- kept for the printed table/debug
-    per_filter_pct_capped = {}   # capped -- used only in the combined quadrature sum
+    per_filter_pct = {}   # raw, uncapped, unfiltered used for the printed table
 
-    for label, fam, leg_idx, leg_name in legs:
-        nom_cut = "(jet0_Tagged_{0}[{1}] == 1 && jet1_Tagged_{0}[{1}] == 1)".format(fam, leg_idx)
+    for label, fam, leg_idx, leg_name, single_jet in legs:
 
-        # Require every leg BEFORE leg_idx to have nominally passed, for each jet,
-        # so a jet that never cleared an earlier leg can't get spuriously promoted
-        # this is specifically for the Varied leg
-        gate0 = " && ".join("jet0_Tagged_{0}[{1}] == 1".format(fam, k) for k in range(leg_idx)) or "1"
-        gate1 = " && ".join("jet1_Tagged_{0}[{1}] == 1".format(fam, k) for k in range(leg_idx)) or "1"
+        if fam == "L1":
+            nom_cut = "{0}_Tagged_{1}[{2}] == 1".format(single_jet, fam, leg_idx)
+            var_cut = "{0}_Tagged_Varied_{1}[{2}] == 1".format(single_jet, fam, leg_idx)
+        else:
+            nom_cut = "(jet0_Tagged_{0}[{1}] == 1 && jet1_Tagged_{0}[{1}] == 1)".format(fam, leg_idx)
 
-        var_cut = "(({0}) && jet0_Tagged_Varied_{2}[{3}] == 1 && ({1}) && jet1_Tagged_Varied_{2}[{3}] == 1)".format(
-            gate0, gate1, fam, leg_idx
-        )
+            gate0 = " && ".join("jet0_Tagged_{0}[{1}] == 1".format(fam, k) for k in range(leg_idx)) or "1"
+            gate1 = " && ".join("jet1_Tagged_{0}[{1}] == 1".format(fam, k) for k in range(leg_idx)) or "1"
+
+            var_cut = "(({0}) && jet0_Tagged_Varied_{2}[{3}] == 1) && (({1}) && jet1_Tagged_Varied_{2}[{3}] == 1)".format(
+                gate0, gate1, fam, leg_idx
+            )
 
         nominal = get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc,
-                                    sys="trig_{0}_nom".format(label), trig_cut=nom_cut)
+                                    sys="trig_{0}_nom".format(label), trig_cut=nom_cut, require_hlt_decision=False)
         varied  = get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc,
-                                    sys="trig_{0}_var".format(label), trig_cut=var_cut)
+                                    sys="trig_{0}_var".format(label), trig_cut=var_cut, require_hlt_decision=False)
 
         for region in regions:
             nom = nominal[region]
             var = varied[region]
-            pct = 0.0 if nom <= 0 or nom < 1e-3 else (var - nom) / nom * 100.0
+            pct = 0.0 if nom <= 0 or nom < 0.1 else (var - nom) / nom * 100.0
             per_filter_pct["{0}_{1}".format(label, region)] = pct
 
-            capped_pct = max(-MAX_LEG_PCT, min(pct, MAX_LEG_PCT))
-            if abs(pct) > MAX_LEG_PCT:
-                print("WARNING: leg {0} region {1} pct={2:.2f}% exceeds cap, capping to {3:.1f}% (nom={4:.6f}, var={5:.6f})".format(
-                    label, region, pct, capped_pct, nom, var))
-            per_filter_pct_capped["{0}_{1}".format(label, region)] = capped_pct
-
             if debug:
-                print("leg={0} region={1} nom={2} var={3} pct={4:.2f}% (capped={5:.2f}%)".format(
-                    label, region, nom, var, pct, capped_pct))
+                print("leg={0} region={1} nom={2} var={3} pct={4:.2f}%".format(label, region, nom, var, pct))
 
-    final_legs = ["L1", "HLT1a_PTrk", "HLT1b_PTrk", "HLT2_PTrk", "HLT3a_DTrk", "HLT3b_DTrk"]
+    hlt_legs = [
+        "HLT1a_pT", "HLT1a_PTrk",
+        "HLT1b_pT", "HLT1b_PTrk",
+        "HLT2_pT", "HLT2_PTrk",
+        "HLT3a_pT", "HLT3a_PTrk", "HLT3a_DTrk",
+        "HLT3b_pT", "HLT3b_PTrk", "HLT3b_DTrk",
+    ]
 
     combined = {}
     for region in regions:
-        quad_sum_pct = sum(per_filter_pct_capped["{0}_{1}".format(label, region)] ** 2 for label in final_legs)
+        l1_lead_pct = per_filter_pct["L1_lead_{0}".format(region)]
+        l1_sublead_pct = per_filter_pct["L1_sublead_{0}".format(region)]
+
+        quad_sum_pct = 0.0
+        if abs(l1_lead_pct) <= MAX_LEG_PCT:
+            quad_sum_pct += l1_lead_pct ** 2
+        else:
+            print("WARNING: leg L1_lead region {0} pct={1:.2f}% exceeds {2}%, EXCLUDED from combined sys".format(
+                region, l1_lead_pct, MAX_LEG_PCT))
+
+        if abs(l1_sublead_pct) <= MAX_LEG_PCT:
+            quad_sum_pct += l1_sublead_pct ** 2
+        else:
+            print("WARNING: leg L1_sublead region {0} pct={1:.2f}% exceeds {2}%, EXCLUDED from combined sys".format(
+                region, l1_sublead_pct, MAX_LEG_PCT))
+
+        for label in hlt_legs:
+            leg_pct = per_filter_pct["{0}_{1}".format(label, region)]
+            if abs(leg_pct) <= MAX_LEG_PCT:
+                quad_sum_pct += leg_pct ** 2
+            else:
+                print("WARNING: leg {0} region {1} pct={2:.2f}% exceeds {3}%, EXCLUDED from combined sys".format(
+                    label, region, leg_pct, MAX_LEG_PCT))
+
         val = 1.0 + (quad_sum_pct ** 0.5) / 100.0
         val = min(max(val, 1.0), MAX_TRIG)
         if val >= MAX_TRIG:
@@ -266,18 +294,28 @@ def main():
 
     bkg_table = [
         {
-            #WP 1 full opt. with tighter side bands and pT 3 bins
+            # FINAL sideband update
             # sigeff_sf_23 = 0.71 
             "lj_depth": 0.985,
             "lj_inc": 0.995,
             "sj_depth": 0.995,
             "sj_inc": 0.975,
             "bkg": {
-                2022: {"lj": 10.78, "sj": 0.0000001},
-                2023: {"lj": 11.24, "sj": 2.9},
+                2022: {"lj": 10.15, "sj": 0.25},
+                2023: {"lj": 10.75, "sj": 2.92},
             },
         },
-
+#            #WP 1 full opt. with tighter side bands and pT 3 bins
+#            # sigeff_sf_23 = 0.71 
+#            "lj_depth": 0.985,
+#            "lj_inc": 0.995,
+#            "sj_depth": 0.995,
+#            "sj_inc": 0.975,
+#            "bkg": {
+#                2022: {"lj": 10.83, "sj": 0.000001},
+#                2023: {"lj": 11.79, "sj": 2.95},
+#            },
+#        },
 #            #WP 1 full opt. with tighter side bands
 #            # sigeff_sf_23 = 0.71 
 #            "lj_depth": 0.985,
@@ -458,29 +496,29 @@ def main():
                 print("nom, pileup up, pileup down:", nominal[pukey], pu_up[pukey], pu_down[pukey])
 
             legs = [
-                 ("L1",        "L1",    0, "pT"),
-                 ("HLT1a_pT",  "HLT1a", 0, "pT"),
-                 ("HLT1a_PTrk","HLT1a", 1, "PTrk"),
-                 ("HLT1b_pT",  "HLT1b", 0, "pT"),
-                 ("HLT1b_PTrk","HLT1b", 1, "PTrk"),
-                 ("HLT2_pT",   "HLT2",  0, "pT"),
-                 ("HLT2_PTrk", "HLT2",  1, "PTrk"),
-                 ("HLT3a_pT",  "HLT3a", 0, "pT"),
-                 ("HLT3a_PTrk","HLT3a", 1, "PTrk"),
-                 ("HLT3a_DTrk","HLT3a", 2, "DTrk"),
-                 ("HLT3b_pT",  "HLT3b", 0, "pT"),
-                 ("HLT3b_PTrk","HLT3b", 1, "PTrk"),
-                 ("HLT3b_DTrk","HLT3b", 2, "DTrk"),
-             ]
- 
+                ("L1_lead",    "L1",    0, "pT"),
+                ("L1_sublead", "L1",    0, "pT"),
+                ("HLT1a_pT",  "HLT1a", 0, "pT"),
+                ("HLT1a_PTrk","HLT1a", 1, "PTrk"),
+                ("HLT1b_pT",  "HLT1b", 0, "pT"),
+                ("HLT1b_PTrk","HLT1b", 1, "PTrk"),
+                ("HLT2_pT",   "HLT2",  0, "pT"),
+                ("HLT2_PTrk", "HLT2",  1, "PTrk"),
+                ("HLT3a_pT",  "HLT3a", 0, "pT"),
+                ("HLT3a_PTrk","HLT3a", 1, "PTrk"),
+                ("HLT3a_DTrk","HLT3a", 2, "DTrk"),
+                ("HLT3b_pT",  "HLT3b", 0, "pT"),
+                ("HLT3b_PTrk","HLT3b", 1, "PTrk"),
+                ("HLT3b_DTrk","HLT3b", 2, "DTrk"),
+            ]
+            
             trig_combined, trig_per_filter_pct = get_trigger_systematics(args.input, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, debug=debug)
-
-            print("--- Trigger SF variation by leg (ctau={0}) for {1}---".format(ctau_target,filetag))
+            
+            print("--- Trigger SF variation by leg (ctau={0}) for {1}---".format(ctau_target, filetag))
             print("{0:<14}{1:>12}{2:>12}{3:>12}{4:>12}".format("Leg", "LJDC_23", "SJDC_23", "LJDC_22", "SJDC_22"))
             for label, fam, leg_idx, leg_name in legs:
-                    row = [trig_per_filter_pct["{0}_SIG{1}".format(label, r)] for r in ["LJDC_23", "SJDC_23", "LJDC_22", "SJDC_22"]]
-                    print("{0:<14}{1:>11.2f}%{2:>11.2f}%{3:>11.2f}%{4:>11.2f}%".format(label, *row))
-
+                row = [trig_per_filter_pct["{0}_SIG{1}".format(label, r)] for r in ["LJDC_23", "SJDC_23", "LJDC_22", "SJDC_22"]]
+                print("{0:<14}{1:>11.2f}%{2:>11.2f}%{3:>11.2f}%{4:>11.2f}%".format(label, *row))
 
             # Replace test in template datacard
             output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )

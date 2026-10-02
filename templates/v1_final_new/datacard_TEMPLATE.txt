@@ -20,7 +20,7 @@ trigEff lnN              TRIGLJDC_23           -              TRIGSJDC_23       
 #DNN systematic
 DNN     lnN              1.10           -              1.10              -              1.10             -              1.10              -
 # Background pileup-dependence background only AN table 9
-bkg_pileup lnN  - 0.9376/1.0624  - 0.779/1.221  - 0.913/1.0807  - 0.999999/1.000001
+bkg_pileup lnN  - 0.928/1.072  - 0.77/1.23  - 0.914/1.086  - 0.56/1.44
 
 #JER systematics implemented using JER up/down minituples
 JER lnN                JERLJDC_23        -           JERSJDC_23        -           JERLJDC_22      -       JERSJDC_22      -

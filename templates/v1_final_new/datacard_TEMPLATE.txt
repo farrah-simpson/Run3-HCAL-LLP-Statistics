@@ -1,32 +1,36 @@
-imax 4  number of channels
+imax 6  number of channels
 jmax 1  number of backgrounds
 kmax *  number of nuisance parameters (sources of systematical uncertainties)
 ------------
-bin                     LJDC_23    SJDC_23    LJDC_22    SJDC_22
-observation             0          0           0         0
+bin                     LJDC_23PreBPix    SJDC_23PreBPix    LJDC_23PostBPix    SJDC_23PostBPix    LJDC_22    SJDC_22
+observation             0                 0                 0                  0                  0          0
 ------------
-bin                     LJDC_23        LJDC_23        SJDC_23        SJDC_23        LJDC_22        LJDC_22        SJDC_22       SJDC_22
-process                 SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg         SIGNAL         bkg
-process                 0              1              0              1              0              1             0              1
-rate                    SIGLJDC_23    BKGLJDC_23       SIGSJDC_23    BKGSJDC_23      SIGLJDC_22         BKGLJDC_22      SIGSJDC_22     BKGSJDC_22
+bin                     LJDC_23PreBPix       LJDC_23PreBPix       SJDC_23PreBPix       SJDC_23PreBPix       LJDC_23PostBPix       LJDC_23PostBPix       SJDC_23PostBPix       SJDC_23PostBPix       LJDC_22        LJDC_22        SJDC_22        SJDC_22
+process                 SIGNAL               bkg                  SIGNAL               bkg                  SIGNAL                bkg                   SIGNAL                bkg                   SIGNAL         bkg            SIGNAL         bkg
+process                 0                    1                    0                    1                    0                     1                     0                     1                     0              1              0              1
+rate                    SIGLJDC_23PreBPix    BKGLJDC_23PreBPix    SIGSJDC_23PreBPix    BKGSJDC_23PreBPix    SIGLJDC_23PostBPix    BKGLJDC_23PostBPix    SIGSJDC_23PostBPix    BKGSJDC_23PostBPix    SIGLJDC_22     BKGLJDC_22     SIGSJDC_22     BKGSJDC_22
 ------------
 #Lumi signal only
-lumi_23_22  lnN              1.0017         -              1.0017         -              1.0138         -              1.0138              -
-lumi_23  lnN              1.0127         -           1.0127         -               -              -              -              -
+lumi_23_22              lnN   1.0017               -                    1.0017               -                    1.0017                -                     1.0017                -                     1.0138         -              1.0138         -
+lumi_23                 lnN   1.0127               -                    1.0127               -                    1.0127                -                     1.0127                -                     -              -              -              -
 
 # Trigger efficiency signal only flat rate
-trigEff lnN              TRIGLJDC_23           -              TRIGSJDC_23              -              TRIGLJDC_22             -              TRIGSJDC_22              -
+trigEff                 lnN   TRIGLJDC_23PreBPix   -                    TRIGSJDC_23PreBPix   -                    TRIGLJDC_23PostBPix   -                     TRIGSJDC_23PostBPix   -                     TRIGLJDC_22    -              TRIGSJDC_22    -
 
 #DNN systematic
-DNN     lnN              1.10           -              1.10              -              1.10             -              1.10              -
+DNN                     lnN   1.10                 -                    1.10                 -                    1.10                  -                     1.10                  -                     1.10           -              1.10           -
+
 # Background pileup-dependence background only AN table 9
-bkg_pileup lnN  - 0.928/1.072  - 0.77/1.23  - 0.914/1.086  - 0.56/1.44
+bkg_pileup              lnN   -                    0.928/1.072          -                    0.77/1.23            -                     0.928/1.072           -                     0.77/1.23             -              0.914/1.086    -              0.56/1.44
+
+# Background non-closure, 2023 pre-BPix only
+bkg_nonclosure_23PreBPix lnN  -                    1.16                 -                    1.16                 -                     -                     -                     -                     -              -              -              -
 
 #JER systematics implemented using JER up/down minituples
-JER lnN                JERLJDC_23        -           JERSJDC_23        -           JERLJDC_22      -       JERSJDC_22      -
+JER                     lnN   JERLJDC_23PreBPix    -                    JERSJDC_23PreBPix    -                    JERLJDC_23PostBPix    -                     JERSJDC_23PostBPix    -                     JERLJDC_22     -              JERSJDC_22     -
 
 #pile up systematics implemented using JER up/down minituples
-standard_pileup lnN                PULJDC_23        -           PUSJDC_23        -           PULJDC_22      -       PUSJDC_22      -
+standard_pileup         lnN   PULJDC_23PreBPix     -                    PUSJDC_23PreBPix     -                    PULJDC_23PostBPix     -                     PUSJDC_23PostBPix     -                     PULJDC_22      -              PUSJDC_22      -
 
-JER_uncert_PUPPIvsCHS lnN   1.10             -            1.10             -             1.10          -          1.10         -
+JER_uncert_PUPPIvsCHS   lnN   1.10                 -                    1.10                 -                    1.10                  -                     1.10                  -                     1.10           -              1.10           -
 * autoMCStats 0

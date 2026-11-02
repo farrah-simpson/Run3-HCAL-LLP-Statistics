@@ -77,14 +77,18 @@ def make_chain(tree_name, file_list):
 def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, pileupweight_="nominal", sys="nominal",trig_cut="1", require_hlt_decision=True):
 
     # scale the signal based on the difference in signal efficiencies in pre and post BPix
-    sigeff_sf_23 = 0.71 
+    sigeff_sf_23 = 0.72 
 
-    lumi_sf_23 = 1.0  
+    lumi_sf_23_PreBPix = 1.0  
+    lumi_sf_23_PostBPix = 1.0
+    lumi_sf_23 = 1.0
     lumi_sf_22 = 1.0 
     
-    lumi_2022 = 31.51
-    lumi_2023 =28.91
-    lumi_total = lumi_2022 + lumi_2023
+    lumi_2022 = 34.6644
+    lumi_2023_PreBPix = 17.9642 
+    lumi_2023_PostBPix = 9.67674 
+    lumi_2023 = lumi_2023_PreBPix + lumi_2023_PostBPix 
+    lumi_total = lumi_2022 + lumi_2023_PreBPix + lumi_2023_PostBPix
  
     # ----- Read in Signal ----- #
  
@@ -178,9 +182,11 @@ def get_signal_yield(infilepath, ctau_sample, ctau_target, lj_depth, lj_inc, sj_
 
     return {
     "SIGLJDC_22": nevents_sig_ljdc_temp * lumi_2022 / lumi_total,
-    "SIGLJDC_23": nevents_sig_ljdc_temp * lumi_2023 / lumi_total,
+    "SIGLJDC_23PreBPix": nevents_sig_ljdc_temp * lumi_2023_PreBPix / lumi_total,
+    "SIGLJDC_23PostBPix": nevents_sig_ljdc_temp * lumi_2023_PostBPix / lumi_total,
     "SIGSJDC_22": nevents_sig_sjdc_temp * lumi_2022 / lumi_total,
-    "SIGSJDC_23": nevents_sig_sjdc_temp * lumi_2023 / lumi_total,
+    "SIGSJDC_23PreBPix": nevents_sig_sjdc_temp * lumi_2023_PreBPix / lumi_total,
+    "SIGSJDC_23PostBPix": nevents_sig_sjdc_temp * lumi_2023_PostBPix / lumi_total,
     }
 
 # ------------------------------------------------------------------------------
@@ -204,7 +210,7 @@ def get_trigger_systematics(infilepath, ctau_sample, ctau_target, lj_depth, lj_i
         ("HLT3b_PTrk","HLT3b", 1, "PTrk", None),
         ("HLT3b_DTrk","HLT3b", 2, "DTrk", None),
     ]
-    regions = ["SIGLJDC_23", "SIGSJDC_23", "SIGLJDC_22", "SIGSJDC_22"]
+    regions = ["SIGLJDC_23PostBPix", "SIGSJDC_23PostBPix","SIGLJDC_23PreBPix", "SIGSJDC_23PreBPix", "SIGLJDC_22", "SIGSJDC_22"]
 
     per_filter_pct = {}   # raw, uncapped, unfiltered used for the printed table
 
@@ -295,14 +301,15 @@ def main():
     bkg_table = [
         {
             # FINAL sideband update
-            # sigeff_sf_23 = 0.71 
+            # sigeff_sf_23 = to update from 0.72 
             "lj_depth": 0.985,
             "lj_inc": 0.995,
             "sj_depth": 0.995,
             "sj_inc": 0.975,
             "bkg": {
-                2022: {"lj": 10.15, "sj": 0.25},
-                2023: {"lj": 10.75, "sj": 2.92},
+                "2022": {"lj": 10.23, "sj": 0.23},
+                "2023PreBPix": {"lj": 6.57, "sj": 1.23},
+                "2023PostBPix": {"lj": 3.68, "sj": 1.82},
             },
         },
 #            #WP 1 full opt. with tighter side bands and pT 3 bins
@@ -366,11 +373,13 @@ def main():
     ]
     print("Reading in data tree... (this may take a few minutes)")
    
-    infile_data_23 = [
+    infile_data_23PreBPix = [
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv1_scores.root",
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv2_scores.root",
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv3_scores.root",
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Cv4_scores.root",
+    ]
+    infile_data_23PostBPix = [
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Dv1_scores.root",
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2023Dv2_scores.root",
     ]
@@ -381,17 +390,25 @@ def main():
     "/eos/cms/store/group/phys_exotica/HCAL_LLP/MiniTuples/v5.6/minituple_data_2022Gv1_scores.root",
     ]
     
-    tree_data_23 = make_chain("NoSel", infile_data_23) 
+    tree_data_23PreBPix = make_chain("NoSel", infile_data_23PreBPix) 
+    tree_data_23PostBPix = make_chain("NoSel", infile_data_23PostBPix) 
     tree_data_22   = make_chain("NoSel", infile_data_22)
     
     # Copy tree but only copy these branches
-    tree_data_23.SetBranchStatus("*", 0) 
-    tree_data_23.SetBranchStatus("Pass_PreSel", 1) 
-    tree_data_23.SetBranchStatus("jet*_DepthTagCand", 1) 
-    tree_data_23.SetBranchStatus("jet*_InclTagCand", 1) 
-    tree_data_23.SetBranchStatus("jet*_scores*", 1) 
-    tree_data_23.SetBranchStatus("jet*_DeepCSV*", 1)
+    tree_data_23PreBPix.SetBranchStatus("*", 0) 
+    tree_data_23PreBPix.SetBranchStatus("Pass_PreSel", 1) 
+    tree_data_23PreBPix.SetBranchStatus("jet*_DepthTagCand", 1) 
+    tree_data_23PreBPix.SetBranchStatus("jet*_InclTagCand", 1) 
+    tree_data_23PreBPix.SetBranchStatus("jet*_scores*", 1) 
+    tree_data_23PreBPix.SetBranchStatus("jet*_DeepCSV*", 1)
     
+    tree_data_23PostBPix.SetBranchStatus("*", 0) 
+    tree_data_23PostBPix.SetBranchStatus("Pass_PreSel", 1) 
+    tree_data_23PostBPix.SetBranchStatus("jet*_DepthTagCand", 1) 
+    tree_data_23PostBPix.SetBranchStatus("jet*_InclTagCand", 1) 
+    tree_data_23PostBPix.SetBranchStatus("jet*_scores*", 1) 
+    tree_data_23PostBPix.SetBranchStatus("jet*_DeepCSV*", 1)
+ 
     tree_data_22.SetBranchStatus("*", 0) 
     tree_data_22.SetBranchStatus("Pass_PreSel", 1) 
     tree_data_22.SetBranchStatus("jet*_DepthTagCand", 1) 
@@ -410,8 +427,10 @@ def main():
     
         ctaus        = []
         limits_obs   = []
-        nevents_sig_ljdc_23 = []
-        nevents_sig_sjdc_23 = []
+        nevents_sig_ljdc_23PreBPix = []
+        nevents_sig_sjdc_23PreBPix = []
+        nevents_sig_ljdc_23PostBPix = []
+        nevents_sig_sjdc_23PostBPix = []
         nevents_sig_ljdc_22 = []
         nevents_sig_sjdc_22 = []
     
@@ -426,11 +445,13 @@ def main():
         outfile_temp = ROOT.TFile(tmp_root, "RECREATE")
 
         outfile_temp.cd()
-        tree_data_skim_23 = tree_data_23.CopyTree("Pass_PreSel == 1")
+        tree_data_skim_23PreBPix = tree_data_23PreBPix.CopyTree("Pass_PreSel == 1")
+        tree_data_skim_23PostBPix = tree_data_23PostBPix.CopyTree("Pass_PreSel == 1")
         tree_data_skim_22 = tree_data_22.CopyTree("Pass_PreSel == 1")
       
-        nevents_bkg_ljdc_srpred_23, nevents_bkg_sjdc_srpred_23  = row["bkg"][2023]["lj"], row["bkg"][2023]["sj"]
-        nevents_bkg_ljdc_srpred_22, nevents_bkg_sjdc_srpred_22  = row["bkg"][2022]["lj"], row["bkg"][2022]["sj"] 
+        nevents_bkg_ljdc_srpred_23PreBPix, nevents_bkg_sjdc_srpred_23PreBPix  = row["bkg"]["2023PreBPix"]["lj"], row["bkg"]["2023PreBPix"]["sj"]
+        nevents_bkg_ljdc_srpred_23PostBPix, nevents_bkg_sjdc_srpred_23PostBPix  = row["bkg"]["2023PostBPix"]["lj"], row["bkg"]["2023PostBPix"]["sj"]
+        nevents_bkg_ljdc_srpred_22, nevents_bkg_sjdc_srpred_22  = row["bkg"]["2022"]["lj"], row["bkg"]["2022"]["sj"] 
      
         # ----- Loop over Signal Lifetimes ----- #
         print( "Getting Event Counts...")
@@ -441,8 +462,10 @@ def main():
 
             nominal = get_signal_yield(args.input, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc)
 
-            nevents_sig_ljdc_23.append( nominal["SIGLJDC_23"] / SF_temp )
-            nevents_sig_sjdc_23.append( nominal["SIGSJDC_23"] / SF_temp )
+            nevents_sig_ljdc_23PreBPix.append( nominal["SIGLJDC_23PreBPix"] / SF_temp )
+            nevents_sig_sjdc_23PreBPix.append( nominal["SIGSJDC_23PreBPix"] / SF_temp )
+            nevents_sig_ljdc_23PostBPix.append( nominal["SIGLJDC_23PostBPix"] / SF_temp )
+            nevents_sig_sjdc_23PostBPix.append( nominal["SIGSJDC_23PostBPix"] / SF_temp )
             nevents_sig_ljdc_22.append( nominal["SIGLJDC_22"] / SF_temp )
             nevents_sig_sjdc_22.append( nominal["SIGSJDC_22"] / SF_temp )
 
@@ -515,41 +538,53 @@ def main():
             trig_combined, trig_per_filter_pct = get_trigger_systematics(args.input, ctau_sample, ctau_target, lj_depth, lj_inc, sj_depth, sj_inc, debug=debug)
             
             print("--- Trigger SF variation by leg (ctau={0}) for {1}---".format(ctau_target, filetag))
-            print("{0:<14}{1:>12}{2:>12}{3:>12}{4:>12}".format("Leg", "LJDC_23", "SJDC_23", "LJDC_22", "SJDC_22"))
+            print("{0:<14}{1:>12}{2:>12}{3:>12}{4:>12}".format("Leg", "LJDC_23PreBPix", "SJDC_23PreBPix","LJDC_23PostBPix", "SJDC_23PostBPix", "LJDC_22", "SJDC_22"))
             for label, fam, leg_idx, leg_name in legs:
-                row = [trig_per_filter_pct["{0}_SIG{1}".format(label, r)] for r in ["LJDC_23", "SJDC_23", "LJDC_22", "SJDC_22"]]
+                row = [trig_per_filter_pct["{0}_SIG{1}".format(label, r)] for r in ["LJDC_23PreBPix", "SJDC_23PreBPix", "LJDC_23PostBPix", "SJDC_23PostBPix", "LJDC_22", "SJDC_22"]]
                 print("{0:<14}{1:>11.2f}%{2:>11.2f}%{3:>11.2f}%{4:>11.2f}%".format(label, *row))
 
             # Replace test in template datacard
             output_file = template_datacard.replace("TEMPLATE", unique_filetag + "__" + ctau_target )
 
-            print("Nevents LJDC 23:", nominal["SIGLJDC_23"])
-            print("Nevents SJDC 23:", nominal["SIGSJDC_23"])
+            print("Nevents LJDC 23PostBPix:", nominal["SIGLJDC_23PostBPix"])
+            print("Nevents SJDC 23PostBPix:", nominal["SIGSJDC_23PostBPix"])
+            print("Nevents LJDC 23PreBPix:", nominal["SIGLJDC_23PreBPix"])
+            print("Nevents SJDC 23PreBPix:", nominal["SIGSJDC_23PreBPix"])
             print("Nevents LJDC 22:", nominal["SIGLJDC_22"])
             print("Nevents SJDC 22:", nominal["SIGSJDC_22"])
 
             replacements = {
-                "SIGLJDC_23": f"{nominal['SIGLJDC_23']:.6e}", 
-                "SIGSJDC_23": f"{nominal['SIGSJDC_23']:.6e}",
+                "SIGLJDC_23PostBPix": f"{nominal['SIGLJDC_23PostBPix']:.6e}", 
+                "SIGSJDC_23PostBPix": f"{nominal['SIGSJDC_23PostBPix']:.6e}",
+                "SIGLJDC_23PreBPix": f"{nominal['SIGLJDC_23PreBPix']:.6e}", 
+                "SIGSJDC_23PreBPix": f"{nominal['SIGSJDC_23PreBPix']:.6e}",
                 "SIGLJDC_22": f"{nominal['SIGLJDC_22']:.6e}", 
                 "SIGSJDC_22": f"{nominal['SIGSJDC_22']:.6e}",
 
-                "JERLJDC_23": f"{jer['SIGLJDC_23']:.6e}",
-                "JERSJDC_23": f"{jer['SIGSJDC_23']:.6e}",
+                "JERLJDC_23PostBPix": f"{jer['SIGLJDC_23PostBPix']:.6e}",
+                "JERSJDC_23PostBPix": f"{jer['SIGSJDC_23PostBPix']:.6e}",
+                "JERLJDC_23PreBPix": f"{jer['SIGLJDC_23PreBPix']:.6e}",
+                "JERSJDC_23PreBPix": f"{jer['SIGSJDC_23PreBPix']:.6e}",
                 "JERLJDC_22": f"{jer['SIGLJDC_22']:.6e}",
                 "JERSJDC_22": f"{jer['SIGSJDC_22']:.6e}",
 
-                "PULJDC_23": f"{pu['SIGLJDC_23']:.6e}",
-                "PUSJDC_23": f"{pu['SIGSJDC_23']:.6e}",
+                "PULJDC_23PostBPix": f"{pu['SIGLJDC_23PostBPix']:.6e}",
+                "PUSJDC_23PostBPix": f"{pu['SIGSJDC_23PostBPix']:.6e}",
+                "PULJDC_23PreBPix": f"{pu['SIGLJDC_23PreBPix']:.6e}",
+                "PUSJDC_23PreBPix": f"{pu['SIGSJDC_23PreBPix']:.6e}",
                 "PULJDC_22": f"{pu['SIGLJDC_22']:.6e}",
                 "PUSJDC_22": f"{pu['SIGSJDC_22']:.6e}",
-                "TRIGLJDC_23": f"{trig_combined['SIGLJDC_23']:.6e}", 
-                "TRIGSJDC_23": f"{trig_combined['SIGSJDC_23']:.6e}",
+                "TRIGLJDC_23PostBPix": f"{trig_combined['SIGLJDC_23PostBPix']:.6e}", 
+                "TRIGSJDC_23PostBPix": f"{trig_combined['SIGSJDC_23PostBPix']:.6e}",
+                "TRIGLJDC_23PreBPix": f"{trig_combined['SIGLJDC_23PreBPix']:.6e}", 
+                "TRIGSJDC_23PreBPix": f"{trig_combined['SIGSJDC_23PreBPix']:.6e}",
                 "TRIGLJDC_22": f"{trig_combined['SIGLJDC_22']:.6e}",
                 "TRIGSJDC_22": f"{trig_combined['SIGSJDC_22']:.6e}",
 
-                "BKGLJDC_23": f"{nevents_bkg_ljdc_srpred_23:.6e}", 
-                "BKGSJDC_23": f"{nevents_bkg_sjdc_srpred_23:.6e}",
+                "BKGLJDC_23PostBPix": f"{nevents_bkg_ljdc_srpred_23PostBPix:.6e}", 
+                "BKGSJDC_23PostBPix": f"{nevents_bkg_sjdc_srpred_23PostBPix:.6e}",
+                "BKGLJDC_23PreBPix": f"{nevents_bkg_ljdc_srpred_23PreBPix:.6e}", 
+                "BKGSJDC_23PreBPix": f"{nevents_bkg_sjdc_srpred_23PreBPix:.6e}",
                 "BKGLJDC_22": f"{nevents_bkg_ljdc_srpred_22:.6e}", 
                 "BKGSJDC_22": f"{nevents_bkg_sjdc_srpred_22:.6e}",
             }
@@ -605,12 +640,16 @@ def main():
         data["ctaus"] = ctaus
         data["limits_obs"] = limits_obs
         data["limits_exp"] = limits_expected
-        data["nevents_sig_ljdc_23"] = nevents_sig_ljdc_23
-        data["nevents_sig_sjdc_23"] = nevents_sig_sjdc_23
+        data["nevents_sig_ljdc_23PostBPix"] = nevents_sig_ljdc_23PostBPix
+        data["nevents_sig_sjdc_23PostBPix"] = nevents_sig_sjdc_23PostBPix
+        data["nevents_sig_ljdc_23PreBPix"] = nevents_sig_ljdc_23PreBPix
+        data["nevents_sig_sjdc_23PreBPix"] = nevents_sig_sjdc_23PreBPix
         data["nevents_sig_ljdc_22"] = nevents_sig_ljdc_22
         data["nevents_sig_sjdc_22"] = nevents_sig_sjdc_22
-        data["nevents_bkg_ljdc_23"] = nevents_bkg_ljdc_srpred_23
-        data["nevents_bkg_sjdc_23"] = nevents_bkg_sjdc_srpred_23
+        data["nevents_bkg_ljdc_23PostBPix"] = nevents_bkg_ljdc_srpred_23PostBPix
+        data["nevents_bkg_sjdc_23PostBPix"] = nevents_bkg_sjdc_srpred_23PostBPix
+        data["nevents_bkg_ljdc_23PreBPix"] = nevents_bkg_ljdc_srpred_23PreBPix
+        data["nevents_bkg_sjdc_23PreBPix"] = nevents_bkg_sjdc_srpred_23PreBPix
         data["nevents_bkg_ljdc_22"] = nevents_bkg_ljdc_srpred_22
         data["nevents_bkg_sjdc_22"] = nevents_bkg_sjdc_srpred_22
     
@@ -625,12 +664,16 @@ def main():
         print( "--------------------------------------" )
         print( "CTaus: ", ctaus )
         print( "Limits:", limits_expected["50.0"] )
-        print( "LJDC 23:  ", nevents_sig_ljdc_23 )
-        print( "SJDC 23:  ", nevents_sig_sjdc_23 )
+        print( "LJDC 23 PostBPix:  ", nevents_sig_ljdc_23PostBPix )
+        print( "SJDC 23 PostBPix:  ", nevents_sig_sjdc_23PostBPix )
+        print( "LJDC 23 PreBPix:  ", nevents_sig_ljdc_23PreBPix )
+        print( "SJDC 23 PreBPix:  ", nevents_sig_sjdc_23PreBPix )
         print( "LJDC 22:  ", nevents_sig_ljdc_22 )
         print( "SJDC 22:  ", nevents_sig_sjdc_22 )
-        print( "BKG LJDC 23:  ", nevents_bkg_ljdc_srpred_23 )
-        print( "BKG SJDC 23:  ", nevents_bkg_sjdc_srpred_23 )
+        print( "BKG LJDC 23 PostBPix:  ", nevents_bkg_ljdc_srpred_23PostBPix )
+        print( "BKG SJDC 23 PostBPix:  ", nevents_bkg_sjdc_srpred_23PostBPix )
+        print( "BKG LJDC 23 PreBPix:  ", nevents_bkg_ljdc_srpred_23PreBPix )
+        print( "BKG SJDC 23 PreBPix:  ", nevents_bkg_sjdc_srpred_23PreBPix )
         print( "BKG LJDC 22:  ", nevents_bkg_ljdc_srpred_22 )
         print( "BKG SJDC 22:  ", nevents_bkg_sjdc_srpred_22 )
      

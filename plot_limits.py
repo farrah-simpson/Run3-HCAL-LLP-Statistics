@@ -21,7 +21,7 @@ plt.rcParams.update({
     "ytick.minor.visible": True
 })
 
-use_xsec = True
+use_xsec = False
 
 # -------------------------------------------------------------------------------------------------
 def get_data(infile, mass = 125):
@@ -49,20 +49,25 @@ def get_data(infile, mass = 125):
 	data_out["exp_2s_low"] = np.array( data_in["limits_exp"][" 2.5"] )[mask] * xsec_theory
 	data_out["exp_2s_high"] = np.array( data_in["limits_exp"]["97.5"] )[mask] * xsec_theory
 
-	data_out["nevents_sig_ljdc_23"] = np.array( data_in["nevents_sig_ljdc_23"] )[mask] #* 0.01
-	data_out["nevents_sig_sjdc_23"] = np.array( data_in["nevents_sig_sjdc_23"] )[mask] #* 0.01
+	data_out["nevents_sig_ljdc_23PostBPix"] = np.array( data_in["nevents_sig_ljdc_23PostBPix"] )[mask] #* 0.01
+	data_out["nevents_sig_sjdc_23PostBPix"] = np.array( data_in["nevents_sig_sjdc_23PostBPix"] )[mask] #* 0.01
+	data_out["nevents_sig_ljdc_23PreBPix"] = np.array( data_in["nevents_sig_ljdc_23PreBPix"] )[mask] #* 0.01
+	data_out["nevents_sig_sjdc_23PreBPix"] = np.array( data_in["nevents_sig_sjdc_23PreBPix"] )[mask] #* 0.01
+
 	data_out["nevents_sig_ljdc_22"] = np.array( data_in["nevents_sig_ljdc_22"] )[mask] #* 0.01
 	data_out["nevents_sig_sjdc_22"] = np.array( data_in["nevents_sig_sjdc_22"] )[mask] #* 0.01
 
-	data_out["nevents_sig_ljdc"] = data_out["nevents_sig_ljdc_22"] + data_out["nevents_sig_ljdc_23"]
-	data_out["nevents_sig_sjdc"] = data_out["nevents_sig_sjdc_22"] + data_out["nevents_sig_sjdc_23"]
+	data_out["nevents_sig_ljdc"] = data_out["nevents_sig_ljdc_22"] + data_out["nevents_sig_ljdc_23PreBPix"] + data_out["nevents_sig_ljdc_23PostBPix"]
+	data_out["nevents_sig_sjdc"] = data_out["nevents_sig_sjdc_22"] + data_out["nevents_sig_sjdc_23PreBPix"] + data_out["nevents_sig_sjdc_23PostBPix"]
 
-	bkg_ljdc_23  = data_in["nevents_bkg_ljdc_23"]
-	bkg_sjdc_23  = data_in["nevents_bkg_sjdc_23"]
+	bkg_ljdc_23PostBPix  = data_in["nevents_bkg_ljdc_23PostBPix"]
+	bkg_sjdc_23PostBPix  = data_in["nevents_bkg_sjdc_23PostBPix"]
+	bkg_ljdc_23PreBPix  = data_in["nevents_bkg_ljdc_23PreBPix"]
+	bkg_sjdc_23PreBPix  = data_in["nevents_bkg_sjdc_23PreBPix"]
 	bkg_ljdc_22  = data_in["nevents_bkg_ljdc_22"]
 	bkg_sjdc_22  = data_in["nevents_bkg_sjdc_22"]
-	bkg_ljdc_total = (bkg_ljdc_22 + bkg_ljdc_23)
-	bkg_sjdc_total = (bkg_sjdc_22 + bkg_sjdc_23)
+	bkg_ljdc_total = (bkg_ljdc_22 + bkg_ljdc_23PreBPix + bkg_ljdc_23PostBPix)
+	bkg_sjdc_total = (bkg_sjdc_22 + bkg_ljdc_23PreBPix + bkg_sjdc_23PostBPix)
 
 	data_out["nevents_bkg_ljdc"] = np.full(len(data_out["ctaus"]), bkg_ljdc_total)
 	data_out["nevents_bkg_sjdc"] = np.full(len(data_out["ctaus"]), bkg_sjdc_total)
@@ -113,7 +118,7 @@ def plot_single_limit(infile):
 	        fontsize=16, fontweight='bold', va='bottom')
 	ax.text(0.13, 1.0, r"Internal", transform=ax.transAxes,
 	        fontsize=14, style='italic', va='bottom')
-	ax.text(1.0, 1.0, r"63 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
+	ax.text(1.0, 1.0, r"62 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
 	        fontsize=12, ha='right', va='bottom')
 	#"""
 #60.42 fb-1
@@ -176,7 +181,7 @@ def plot_limit_comparison(infiles, labels=None, outfile="plots/limit_comparison.
             fontsize=16, fontweight='bold', va='bottom')
     ax.text(0.13, 1.0, r"Internal", transform=ax.transAxes,
             fontsize=14, style='italic', va='bottom')
-    ax.text(1.0, 1.0, r"63 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
+    ax.text(1.0, 1.0, r"62 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
             fontsize=12, ha='right', va='bottom')
 
     ax.legend(loc="best", frameon=False, fontsize=10)
@@ -233,7 +238,7 @@ def plot_ratio(infile1, infile2):
 	        fontsize=16, fontweight='bold', va='bottom')
 	ax.text(0.13, 1.0, r"Internal", transform=ax.transAxes,
 	        fontsize=14, style='italic', va='bottom')
-	ax.text(1.0, 1.0, r"63 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
+	ax.text(1.0, 1.0, r"62 fb$^{-1}$ (2022+2023) (13.6 TeV)", transform=ax.transAxes,
 	        fontsize=12, ha='right', va='bottom')
 	#"""
 
